@@ -8,6 +8,7 @@ import {
   IconDashboard,
   IconFolder,
   IconHelp,
+  IconPalette,
   IconSettings,
   IconUser,
 } from "@tabler/icons-react"
@@ -55,6 +56,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         titleKey: "nav.blogs",
         url: "/dashboard/blogs",
         icon: IconArticle,
+      },
+      {
+        titleKey: "nav.designs",
+        url: "/dashboard/designs",
+        icon: IconPalette,
       },
       {
         titleKey: "nav.settings",

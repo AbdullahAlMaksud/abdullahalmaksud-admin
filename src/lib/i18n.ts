@@ -7,7 +7,7 @@ import en from "@/locales/en.json";
 // Supported locales
 export const LOCALES = ["bn", "en"] as const;
 export type Locale = (typeof LOCALES)[number];
-export const DEFAULT_LOCALE: Locale = "bn";
+export const DEFAULT_LOCALE: Locale = "en";
 
 const getStoredLocale = (): Locale => {
   if (typeof window !== "undefined") {

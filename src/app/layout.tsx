@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     description:
       "Control panel for managing books, projects, articles, and settings.",
     type: "website",
-    locale: "bn_BD",
+    locale: "en_US",
     siteName: "Abdullah Al Maksud Admin",
   },
   twitter: {
@@ -37,18 +37,22 @@ export const metadata: Metadata = {
   },
 };
 
+import { AuthProvider } from "@/components/auth/auth-provider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="bn" className="h-full antialiased">
+    <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col font-purno">
-        <I18nProvider>
-          {children}
-        </I18nProvider>
-        <Toaster />
+        <AuthProvider>
+          <I18nProvider>
+            {children}
+          </I18nProvider>
+          <Toaster />
+        </AuthProvider>
       </body>
     </html>
   );

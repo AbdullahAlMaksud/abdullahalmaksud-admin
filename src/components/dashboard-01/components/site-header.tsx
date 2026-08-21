@@ -14,6 +14,7 @@ const routeKeys: Record<string, string> = {
   "/dashboard/books": "header.books",
   "/dashboard/projects": "header.projects",
   "/dashboard/blogs": "header.blogs",
+  "/dashboard/designs": "header.designs",
   "/dashboard/settings": "header.settings",
 }
 
