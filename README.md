@@ -22,8 +22,8 @@ Modern and robust Admin Portal for managing portfolio content, blogs, books, cas
 | Application | Directory | Port | Default URL |
 | :--- | :--- | :--- | :--- |
 | **Portfolio Web** | `AbdullahAlMaksudWeb` | `3000` | [http://localhost:3000](http://localhost:3000) |
-| **Admin Portal** | `AbdullahAlMaksudAdmin` | `3001` | [http://localhost:3001](http://localhost:3001) |
-| **Backend API Server** | `AbdullahAlMaksudServer` | `4000` | [http://localhost:4000](http://localhost:4000) |
+| **Admin Portal** | `AbdullahAlMaksudAdmin` | `4000` | [http://localhost:4000](http://localhost:4000) |
+| **Backend API Server** | `AbdullahAlMaksudServer` | `5000` | [http://localhost:5000](http://localhost:5000) |
 
 ---
 
@@ -51,10 +51,10 @@ pnpm install
 Create a `.env.local` file in the root if you want to connect to a custom backend API URL:
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:4000
+NEXT_PUBLIC_API_URL=http://localhost:5000
 ```
 
-> If not provided, it defaults to `http://localhost:4000`.
+> If not provided, it defaults to `http://localhost:5000`.
 
 ### 4. Run Development Server
 
@@ -62,7 +62,7 @@ NEXT_PUBLIC_API_URL=http://localhost:4000
 pnpm dev
 ```
 
-Open [http://localhost:3001](http://localhost:3001) in your browser.
+Open [http://localhost:4000](http://localhost:4000) in your browser.
 
 ---
 
@@ -70,9 +70,9 @@ Open [http://localhost:3001](http://localhost:3001) in your browser.
 
 | Command | Description |
 | :--- | :--- |
-| `pnpm dev` | Starts the development server on port 3001 |
+| `pnpm dev` | Starts the development server on port 4000 |
 | `pnpm build` | Builds the production bundle |
-| `pnpm start` | Starts the production server on port 3001 |
+| `pnpm start` | Starts the production server on port 4000 |
 | `pnpm lint` | Runs ESLint checks |
 | `pnpm exec tsc --noEmit` | Runs TypeScript type checking |
 
