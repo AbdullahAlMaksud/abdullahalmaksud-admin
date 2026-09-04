@@ -1,7 +1,7 @@
 "use client";
 
-import { LocalizedLoginForm } from "@/components/auth/auth-form";
+import { LoginForm } from "@/components/login-form";
 
 export default function SignInPage() {
-  return <LocalizedLoginForm />;
+  return <LoginForm />;
 }
