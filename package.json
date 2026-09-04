@@ -1,11 +1,13 @@
 {
-  "name": "dashboard-app",
+  "name": "abdullahalmaksud-admin",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@9.15.0",
   "scripts": {
-    "dev": "next dev",
+    "preinstall": "npx only-allow pnpm",
+    "dev": "next dev -p 3001",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3001",
     "lint": "eslint"
   },
   "dependencies": {

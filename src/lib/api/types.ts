@@ -48,10 +48,11 @@ export interface Blog {
   _id?: string;
   title: string;
   slug: string;
-  content: string | BlogContentBlock[];
+  content: any;
+  contentType?: "lexical" | "markdown" | "html";
   excerpt: string;
   coverImage: string;
-  author?: string;
+  author?: any;
   tags: string[];
   category: string;
   readingTime?: string;
@@ -59,7 +60,47 @@ export interface Blog {
   published?: boolean;
   publishedAt?: string;
   featured?: boolean;
+  featuredType?: "large" | "small" | "standard" | "";
+  metaTitle?: string;
+  metaDescription?: string;
   views?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CaseStudyResult {
+  metric: string;
+  value: string;
+  description?: string;
+}
+
+export interface CaseStudy {
+  id?: string;
+  _id?: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content?: any;
+  contentType?: "lexical" | "markdown" | "html";
+  coverImage?: string;
+  screenshots?: string[];
+  projectSlug?: string;
+  tags: string[];
+  category: string;
+  industry?: string;
+  client?: string;
+  challenge?: string;
+  solution?: string;
+  results?: CaseStudyResult[];
+  stack: string[];
+  duration?: string;
+  readingTime?: string;
+  featured?: boolean;
+  isPublished?: boolean;
+  publishedAt?: string;
+  sortOrder?: number;
+  metaTitle?: string;
+  metaDescription?: string;
   createdAt?: string;
   updatedAt?: string;
 }
