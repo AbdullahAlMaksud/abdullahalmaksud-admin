@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const API_SERVER_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  process.env.BACKEND_API_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:5000";
 
 const nextConfig: NextConfig = {
   turbopack: {
@@ -10,8 +12,8 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: "/api/auth/:path*",
-        destination: `${API_SERVER_URL}/api/auth/:path*`,
+        source: "/api/:path*",
+        destination: `${API_SERVER_URL}/api/:path*`,
       },
     ];
   },

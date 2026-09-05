@@ -44,8 +44,27 @@ function CallbackContent() {
 
         // Verify session with server
         const res = await getCurrentUser();
-        if (res?.data?.user || res?.user) {
+        const currentUser = res?.data?.user || res?.user;
+        if (currentUser) {
           if (!isMounted) return;
+          if (currentUser.role !== "admin") {
+            setStatus("error");
+            setMessage("Access denied. Only administrators are authorized to access this portal.");
+            toast.error("Access denied. Only administrators are authorized to access this portal.");
+            setTimeout(() => router.replace("/login"), 2500);
+            return;
+          }
+          const sessionToken =
+            res?.data?.session?.token ||
+            ("session" in res &&
+            res.session &&
+            typeof res.session === "object" &&
+            "token" in res.session
+              ? String((res.session as { token?: unknown }).token)
+              : undefined);
+          if (sessionToken) {
+            setAuthToken(sessionToken);
+          }
           await refreshUser();
           setStatus("success");
           setMessage("Authentication successful! Redirecting to Dashboard...");
@@ -59,6 +78,17 @@ function CallbackContent() {
           const retryRes = await getCurrentUser();
           if (retryRes?.data?.user || retryRes?.user) {
             if (!isMounted) return;
+            const sessionToken =
+              retryRes?.data?.session?.token ||
+              ("session" in retryRes &&
+              retryRes.session &&
+              typeof retryRes.session === "object" &&
+              "token" in retryRes.session
+                ? String((retryRes.session as { token?: unknown }).token)
+                : undefined);
+            if (sessionToken) {
+              setAuthToken(sessionToken);
+            }
             await refreshUser();
             setStatus("success");
             setMessage("Authentication successful! Redirecting...");

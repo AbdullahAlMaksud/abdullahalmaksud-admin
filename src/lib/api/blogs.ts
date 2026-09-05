@@ -49,6 +49,10 @@ export async function getBlogBySlug(slug: string): Promise<ApiResponse<Blog>> {
   return apiClient.get<ApiResponse<Blog>>(`/api/v1/blogs/${slug}`);
 }
 
+export async function getBlogById(id: string): Promise<ApiResponse<Blog>> {
+  return apiClient.get<ApiResponse<Blog>>(`/api/v1/blogs/id/${id}`);
+}
+
 export async function createBlog(
   data: Omit<Blog, "id" | "createdAt" | "updatedAt">
 ): Promise<ApiResponse<Blog>> {

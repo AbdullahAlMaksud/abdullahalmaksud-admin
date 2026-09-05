@@ -51,6 +51,7 @@ export interface Blog {
   content: any;
   contentType?: "lexical" | "markdown" | "html";
   excerpt: string;
+  cover?: string;
   coverImage: string;
   author?: any;
   tags: string[];

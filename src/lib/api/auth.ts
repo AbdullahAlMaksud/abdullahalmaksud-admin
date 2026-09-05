@@ -12,6 +12,25 @@ export interface AuthResponse {
   };
 }
 
+export async function sendOtp(email: string): Promise<{ success: boolean }> {
+  return apiClient.post<{ success: boolean }>("/api/auth/email-otp/send-verification-otp", {
+    email: email.trim().toLowerCase(),
+    type: "sign-in",
+  });
+}
+
+export async function verifyOtp(email: string, otp: string): Promise<AuthResponse> {
+  const res = await apiClient.post<AuthResponse>("/api/auth/sign-in/email-otp", {
+    email: email.trim().toLowerCase(),
+    otp: otp.trim(),
+  });
+  const token = res.token || res.data?.token || res.session?.token;
+  if (token) {
+    setAuthToken(token);
+  }
+  return res;
+}
+
 export async function signInEmail(body: {
   email: string;
   password: string;
@@ -38,7 +57,7 @@ export async function signUpEmail(body: {
 }
 
 export async function signInSocial(
-  provider: "google" | "github",
+  provider: "google" | string = "google",
   callbackURL?: string
 ): Promise<void> {
   const defaultCallback =
@@ -48,8 +67,7 @@ export async function signInSocial(
   const targetCallback = callbackURL || defaultCallback;
 
   // Better Auth's social sign-in: POST to get the OAuth redirect URL
-  // The server handles the Google redirect URI internally via GOOGLE_REDIRECT_URI env var
-  // callbackURL tells Better Auth where to redirect the user AFTER OAuth completes
+  // The server handles Google redirect internally and redirects to callbackURL
   const res = await apiClient.post<{ url?: string; redirect?: boolean }>(
     "/api/auth/sign-in/social",
     {

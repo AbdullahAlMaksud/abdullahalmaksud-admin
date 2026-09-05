@@ -1,23 +1,22 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { AppSidebar } from "@/components/dashboard-01/components/app-sidebar"
 import { SiteHeader } from "@/components/dashboard-01/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Blog } from "@/lib/api/types"
 import { getBlogs } from "@/lib/api/blogs"
 import { BlogsTable } from "@/components/modules/blogs/blogs-table"
-import { BlogFormDialog } from "@/components/modules/blogs/blog-form-dialog"
 import { BlogDeleteDialog } from "@/components/modules/blogs/blog-delete-dialog"
 import { toast } from "sonner"
 
 export default function BlogsPage() {
+  const router = useRouter()
   const [blogs, setBlogs] = useState<Blog[]>([])
   const [loading, setLoading] = useState(true)
 
   // Dialog states
-  const [isFormOpen, setIsFormOpen] = useState(false)
-  const [selectedBlog, setSelectedBlog] = useState<Blog | null>(null)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [deletingBlog, setDeletingBlog] = useState<Blog | null>(null)
 
@@ -41,29 +40,19 @@ export default function BlogsPage() {
   }, [loadBlogs])
 
   const handleOpenAdd = () => {
-    setSelectedBlog(null)
-    setIsFormOpen(true)
+    router.push("/dashboard/blogs/create")
   }
 
   const handleOpenEdit = (blog: Blog) => {
-    setSelectedBlog(blog)
-    setIsFormOpen(true)
+    const blogId = blog.id || blog._id
+    if (blogId) {
+      router.push(`/dashboard/blogs/${blogId}/edit`)
+    }
   }
 
   const handleOpenDelete = (blog: Blog) => {
     setDeletingBlog(blog)
     setIsDeleteOpen(true)
-  }
-
-  const handleFormSuccess = (savedBlog: Blog) => {
-    setBlogs((prev) => {
-      const targetId = savedBlog.id || savedBlog._id
-      const exists = prev.some((b) => (b.id || b._id) === targetId)
-      if (exists) {
-        return prev.map((b) => ((b.id || b._id) === targetId ? savedBlog : b))
-      }
-      return [savedBlog, ...prev]
-    })
   }
 
   const handleDeleteSuccess = (deletedId: string) => {
@@ -106,14 +95,6 @@ export default function BlogsPage() {
             onEdit={handleOpenEdit}
             onDelete={handleOpenDelete}
             onUpdateSuccess={handleUpdateSuccess}
-          />
-
-          {/* Form Modal (Create / Edit) */}
-          <BlogFormDialog
-            open={isFormOpen}
-            onOpenChange={setIsFormOpen}
-            blog={selectedBlog}
-            onSuccess={handleFormSuccess}
           />
 
           {/* Delete Confirmation Modal */}

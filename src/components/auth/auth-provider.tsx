@@ -103,17 +103,23 @@ export function useAuth() {
 
 /**
  * Route protection wrapper for Dashboard pages.
- * Redirects unauthenticated users to /login.
+ * Enforces authentication and strict admin role verification.
+ * Redirects non-admin or unauthenticated users to /login immediately.
  */
 export function DashboardAuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth()
+  const { user, loading, isAdmin, logout } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.replace("/login")
+    if (!loading) {
+      if (!user) {
+        router.replace("/login")
+      } else if (!isAdmin) {
+        toast.error("Access denied. Only administrators are authorized to access this portal.")
+        logout()
+      }
     }
-  }, [user, loading, router])
+  }, [user, loading, isAdmin, router, logout])
 
   if (loading) {
     return (
@@ -128,7 +134,7 @@ export function DashboardAuthGuard({ children }: { children: React.ReactNode }) 
     )
   }
 
-  if (!user) {
+  if (!user || !isAdmin) {
     return null
   }
 

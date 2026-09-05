@@ -19,7 +19,6 @@ import { signInEmail, signInSocial } from "@/lib/api/auth";
 import { useAuth } from "@/components/auth/auth-provider";
 import { cn } from "@/lib/utils";
 import {
-  IconBrandGithub,
   IconBrandGoogle,
   IconLock,
   IconMail,
@@ -40,7 +39,7 @@ export function LocalizedLoginForm({
   const [isLoading, setIsLoading] = useState(false);
   const [isSocialLoading, setIsSocialLoading] = useState<string | null>(null);
 
-  const handleSocialSignIn = async (provider: "google" | "github") => {
+  const handleSocialSignIn = async (provider: "google" = "google") => {
     try {
       setIsSocialLoading(provider);
       await signInSocial(provider);
@@ -86,7 +85,7 @@ export function LocalizedLoginForm({
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div>
               <Button
                 variant="outline"
                 type="button"
@@ -99,21 +98,7 @@ export function LocalizedLoginForm({
                 ) : (
                   <IconBrandGoogle className="size-4 text-rose-400" />
                 )}
-                <span>Google</span>
-              </Button>
-              <Button
-                variant="outline"
-                type="button"
-                onClick={() => handleSocialSignIn("github")}
-                disabled={!!isSocialLoading || isLoading}
-                className="w-full bg-slate-850 border-slate-750 hover:bg-slate-800 text-slate-200 text-xs font-medium gap-2 h-10 border-slate-700/60"
-              >
-                {isSocialLoading === "github" ? (
-                  <IconLoader2 className="size-4 animate-spin text-white" />
-                ) : (
-                  <IconBrandGithub className="size-4 text-white" />
-                )}
-                <span>GitHub</span>
+                <span>{t("auth.loginWithGoogle") || "Continue with Google"}</span>
               </Button>
             </div>
 
