@@ -101,11 +101,9 @@ cp .env.example .env.local
 
 Verify your local endpoints in `.env.local`:
 ```env
-NEXT_PUBLIC_SITE_URL=http://localhost:4000
-NEXT_PUBLIC_ADMIN_URL=http://localhost:4000
-NEXT_PUBLIC_WEB_URL=http://localhost:3000
 NEXT_PUBLIC_API_URL=http://localhost:5000
-BACKEND_API_URL=http://localhost:5000
+NEXT_PUBLIC_SITE_URL=http://localhost:4000
+NEXT_PUBLIC_BLOB_BASE_URL=https://3nkxplqsj14xq0dc.public.blob.vercel-storage.com
 ```
 
 ### 4. Start Development Server
@@ -118,20 +116,15 @@ Open [http://localhost:4000](http://localhost:4000) to access the Admin Portal.
 
 ## ⚙️ Environment Variables
 
-Environment variables are clearly decoupled between **Local Development** and **Production Deployment**:
+The Admin Portal frontend maintains only public configuration variables, while all secrets, authentication providers, and database keys reside securely on the backend server (`AbdullahAlMaksudServer`):
 
 | Variable | Type | Local Default | Production Target | Description |
 | :--- | :--- | :--- | :--- | :--- |
+| `NEXT_PUBLIC_API_URL` | Public URL | `http://localhost:5000` | `https://api-abdullahalmaksud.vercel.app` | Backend API base URL |
 | `NEXT_PUBLIC_SITE_URL` | Public URL | `http://localhost:4000` | `https://chief-abdullahalmaksud.vercel.app` | Base URL of the Admin Portal |
-| `NEXT_PUBLIC_ADMIN_URL`| Public URL | `http://localhost:4000` | `https://chief-abdullahalmaksud.vercel.app` | Canonical Admin URL |
-| `NEXT_PUBLIC_WEB_URL`  | Public URL | `http://localhost:3000` | `https://abdullahalmaksud.com` | Live public portfolio website |
-| `NEXT_PUBLIC_API_URL`  | Public URL | `http://localhost:5000` | `https://api-abdullahalmaksud.vercel.app` | Client-side API endpoint |
-| `BACKEND_API_URL`      | Server URL | `http://localhost:5000` | `https://api-abdullahalmaksud.vercel.app` | Next.js rewrite proxy target |
-| `RESEND_API_KEY`       | Secret     | `re_...` | Set in Vercel | Resend email dispatch key |
-| `OWNER_EMAIL`          | Secret     | `maksud.login@gmail.com` | `maksud.login@gmail.com` | Primary owner notification email |
-| `AAM_STORE_ID`         | Secret     | `store_...` | Set in Vercel | Vercel Blob store identifier |
-| `BLOB_READ_WRITE_TOKEN`| Secret     | `vercel_blob_...` | Set in Vercel | Vercel Blob read/write credentials |
-| `NEXT_PUBLIC_BLOB_BASE_URL` | Public URL | `https://...` | `https://...` | Public Vercel Blob CDN base URL |
+| `NEXT_PUBLIC_BLOB_BASE_URL` | Public URL | `https://3nkxplqsj14xq0dc.public.blob.vercel-storage.com` | `https://3nkxplqsj14xq0dc.public.blob.vercel-storage.com` | Public Vercel Blob CDN base URL |
+
+> 🔒 **Security Notice**: All sensitive secrets and server keys (`BETTER_AUTH_SECRET`, `RESEND_API_KEY`, `BLOB_READ_WRITE_TOKEN`, `MONGODB_URI`, OAuth credentials, etc.) are strictly maintained on the backend server (`AbdullahAlMaksudServer`) and are never exposed to this client application.
 
 ### Environment Files
 - [`.env.local`](.env.local): Local development settings (active by default).
