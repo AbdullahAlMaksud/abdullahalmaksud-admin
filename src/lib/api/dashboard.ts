@@ -15,4 +15,17 @@ export async function getNotifications(locale: string = "en"): Promise<SystemNot
   return Array.isArray(res) ? res : [];
 }
 
+export async function getHealthStatus(): Promise<{
+  success: boolean;
+  data: {
+    status: string;
+    uptime?: number;
+    uptimeFormatted?: string;
+    database?: { isConnected?: boolean; state?: string };
+    timestamp?: string;
+  };
+}> {
+  return apiClient.get("/api/health");
+}
+
 export type { DashboardMetrics, InquiryMessage, SystemNotification };

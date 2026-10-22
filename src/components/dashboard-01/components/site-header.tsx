@@ -11,10 +11,13 @@ import { useLocale } from "@/components/I18nProvider"
 
 const routeKeys: Record<string, string> = {
   "/dashboard": "header.dashboard",
-  "/dashboard/books": "header.books",
+  "/dashboard/case-studies": "header.caseStudies",
   "/dashboard/projects": "header.projects",
   "/dashboard/blogs": "header.blogs",
+  "/dashboard/books": "header.books",
   "/dashboard/designs": "header.designs",
+  "/dashboard/media": "header.media",
+  "/dashboard/messages": "header.messages",
   "/dashboard/settings": "header.settings",
 }
 

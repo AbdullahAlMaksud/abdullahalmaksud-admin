@@ -9,6 +9,9 @@ import {
   IconBook,
   IconFolder,
   IconArticle,
+  IconBuildingArch,
+  IconPalette,
+  IconCloudUpload,
   IconChevronDown,
   type Icon,
 } from "@tabler/icons-react"
@@ -60,15 +63,15 @@ export function NavMain({
                   <IconChevronDown className="size-3.5 opacity-80" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-52">
+              <DropdownMenuContent align="start" className="w-56">
                 <DropdownMenuLabel className="text-xs text-muted-foreground">
                   {t("nav.quickCreateLabel")}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/dashboard/books" className="flex items-center gap-2 cursor-pointer">
-                    <IconBook className="size-4 text-blue-500" />
-                    <span>{t("nav.createBook")}</span>
+                  <Link href="/dashboard/case-studies" className="flex items-center gap-2 cursor-pointer">
+                    <IconBuildingArch className="size-4 text-cyan-500" />
+                    <span>{t("nav.createCaseStudy")}</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -81,6 +84,24 @@ export function NavMain({
                   <Link href="/dashboard/blogs" className="flex items-center gap-2 cursor-pointer">
                     <IconArticle className="size-4 text-purple-500" />
                     <span>{t("nav.createBlog")}</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/books" className="flex items-center gap-2 cursor-pointer">
+                    <IconBook className="size-4 text-blue-500" />
+                    <span>{t("nav.createBook")}</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/designs" className="flex items-center gap-2 cursor-pointer">
+                    <IconPalette className="size-4 text-rose-500" />
+                    <span>{t("nav.createDesign")}</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/media" className="flex items-center gap-2 cursor-pointer">
+                    <IconCloudUpload className="size-4 text-amber-500" />
+                    <span>{t("nav.uploadMedia")}</span>
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>

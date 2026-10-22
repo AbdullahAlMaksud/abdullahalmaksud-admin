@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from "react"
+import { useTranslation } from "react-i18next"
 import { AppSidebar } from "@/components/dashboard-01/components/app-sidebar"
 import { SiteHeader } from "@/components/dashboard-01/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
@@ -9,9 +10,13 @@ import { getBooks } from "@/lib/api/books"
 import { BooksTable } from "@/components/modules/books/books-table"
 import { BookFormDialog } from "@/components/modules/books/book-form-dialog"
 import { BookDeleteDialog } from "@/components/modules/books/book-delete-dialog"
+import { BookBundleEditor } from "@/components/modules/books/book-bundle-editor"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { IconBook, IconLibrary } from "@tabler/icons-react"
 import { toast } from "sonner"
 
 export default function BooksPage() {
+  const { t } = useTranslation()
   const [books, setBooks] = useState<Book[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -29,7 +34,8 @@ export default function BooksPage() {
         setBooks(res.data)
       }
     } catch (error: unknown) {
-      const errMsg = error instanceof Error ? error.message : "Failed to load books from server"
+      const errMsg =
+        error instanceof Error ? error.message : "Failed to load books from server"
       toast.error(errMsg)
     } finally {
       setLoading(false)
@@ -93,20 +99,41 @@ export default function BooksPage() {
         <SiteHeader />
         <div className="flex flex-1 flex-col p-4 lg:p-6 gap-6 max-w-7xl">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight">Reading List & Books</h2>
+            <h2 className="text-2xl font-bold tracking-tight">
+              {t("books.title")}
+            </h2>
             <p className="text-sm text-muted-foreground">
-              Curate books, ratings, reading dates, personal reviews, and recommendations.
+              {t("books.subtitle")}
             </p>
           </div>
 
-          <BooksTable
-            books={books}
-            loading={loading}
-            onAdd={handleOpenAdd}
-            onEdit={handleOpenEdit}
-            onDelete={handleOpenDelete}
-            onUpdateSuccess={handleUpdateSuccess}
-          />
+          <Tabs defaultValue="catalog" className="w-full">
+            <TabsList className="grid w-full sm:w-[420px] grid-cols-2">
+              <TabsTrigger value="catalog" className="gap-1.5 text-xs">
+                <IconLibrary className="size-4" />
+                <span>Individual Catalog</span>
+              </TabsTrigger>
+              <TabsTrigger value="bundle" className="gap-1.5 text-xs">
+                <IconBook className="size-4" />
+                <span>Featured Bundle & Shelf</span>
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="catalog" className="mt-4">
+              <BooksTable
+                books={books}
+                loading={loading}
+                onAdd={handleOpenAdd}
+                onEdit={handleOpenEdit}
+                onDelete={handleOpenDelete}
+                onUpdateSuccess={handleUpdateSuccess}
+              />
+            </TabsContent>
+
+            <TabsContent value="bundle" className="mt-4">
+              <BookBundleEditor />
+            </TabsContent>
+          </Tabs>
 
           {/* Form Modal (Create / Edit) */}
           <BookFormDialog

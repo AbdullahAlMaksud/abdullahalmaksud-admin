@@ -86,7 +86,7 @@ export interface CaseStudy {
   coverImage?: string;
   screenshots?: string[];
   projectSlug?: string;
-  tags: string[];
+  tags?: string[];
   category: string;
   industry?: string;
   client?: string;

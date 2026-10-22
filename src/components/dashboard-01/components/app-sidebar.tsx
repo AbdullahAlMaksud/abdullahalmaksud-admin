@@ -5,9 +5,12 @@ import { useTranslation } from "react-i18next"
 import {
   IconArticle,
   IconBook,
+  IconBuildingArch,
+  IconCloudUpload,
   IconDashboard,
   IconFolder,
   IconHelp,
+  IconMessages,
   IconPalette,
   IconSettings,
   IconUser,
@@ -43,9 +46,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: IconDashboard,
       },
       {
-        titleKey: "nav.books",
-        url: "/dashboard/books",
-        icon: IconBook,
+        titleKey: "nav.caseStudies",
+        url: "/dashboard/case-studies",
+        icon: IconBuildingArch,
       },
       {
         titleKey: "nav.projects",
@@ -58,9 +61,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: IconArticle,
       },
       {
+        titleKey: "nav.books",
+        url: "/dashboard/books",
+        icon: IconBook,
+      },
+      {
         titleKey: "nav.designs",
         url: "/dashboard/designs",
         icon: IconPalette,
+      },
+      {
+        titleKey: "nav.media",
+        url: "/dashboard/media",
+        icon: IconCloudUpload,
+      },
+      {
+        titleKey: "nav.messages",
+        url: "/dashboard/messages",
+        icon: IconMessages,
       },
       {
         titleKey: "nav.settings",
