@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ImageUpload } from "@/components/ui/image-upload"
 import { getHomeData, updateHomeData, getAboutData, updateAboutData } from "@/lib/api/site"
+import { getCurrentUser, updateProfile } from "@/lib/api/auth"
+import { useAuth } from "@/components/auth/auth-provider"
 import {
   IconCheck,
   IconUser,
@@ -24,6 +26,7 @@ import { toast } from "sonner"
 
 export default function SettingsPage() {
   const { t } = useTranslation()
+  const { refreshUser } = useAuth()
 
   // Tab: Profile
   const [profile, setProfile] = useState({
@@ -33,6 +36,7 @@ export default function SettingsPage() {
     website: "https://abdullahalmaksud.com",
     github: "https://github.com/abdullahalmaksud",
     bio: "Full-stack developer, writer, and instructor specializing in Next.js, React, Node.js, and Software System Architecture.",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Abdullah",
   })
 
   // Tab: Dynamic Home Content
@@ -69,14 +73,16 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSavingHome, setIsSavingHome] = useState(false)
   const [isSavingAbout, setIsSavingAbout] = useState(false)
+  const [isSavingProfile, setIsSavingProfile] = useState(false)
 
   useEffect(() => {
     async function loadData() {
       try {
         setIsLoading(true)
-        const [homeRes, aboutRes] = await Promise.allSettled([
+        const [homeRes, aboutRes, userRes] = await Promise.allSettled([
           getHomeData(),
           getAboutData(),
+          getCurrentUser(),
         ])
 
         if (homeRes.status === "fulfilled" && homeRes.value) {
@@ -106,6 +112,16 @@ export default function SettingsPage() {
             experienceYears: a.header?.experienceYears || prev.experienceYears,
           }))
         }
+
+        if (userRes.status === "fulfilled" && userRes.value?.data?.user) {
+          const u = userRes.value.data.user
+          setProfile((prev) => ({
+            ...prev,
+            name: u.name || prev.name,
+            email: u.email || prev.email,
+            avatar: u.image || prev.avatar,
+          }))
+        }
       } catch (error: unknown) {
         console.error("Failed to load initial site settings:", error)
       } finally {
@@ -116,9 +132,22 @@ export default function SettingsPage() {
     loadData()
   }, [])
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault()
-    toast.success(t("settings.profileSaved") || "Profile settings saved successfully.")
+    try {
+      setIsSavingProfile(true)
+      await updateProfile({
+        name: profile.name,
+        avatar: profile.avatar,
+      })
+      await refreshUser()
+      toast.success(t("settings.profileSaved") || "Profile settings saved successfully.")
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : "Failed to update profile"
+      toast.error(errMsg)
+    } finally {
+      setIsSavingProfile(false)
+    }
   }
 
   const handleSaveHome = async (e: React.FormEvent) => {
@@ -443,6 +472,15 @@ export default function SettingsPage() {
                 <CardContent>
                   <form onSubmit={handleSaveProfile} className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2 sm:col-span-2">
+                        <ImageUpload
+                          label="Profile Avatar Photo"
+                          value={profile.avatar}
+                          onChange={(url) => setProfile({ ...profile, avatar: url })}
+                          placeholder="https://... or upload to Blob"
+                        />
+                      </div>
+
                       <div className="space-y-2">
                         <Label htmlFor="prof-name">{t("settings.formName")}</Label>
                         <Input
@@ -500,8 +538,12 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="pt-4 flex justify-end">
-                      <Button type="submit" className="flex items-center gap-1.5">
-                        <IconCheck className="size-4" />
+                      <Button type="submit" disabled={isSavingProfile || isLoading} className="flex items-center gap-1.5">
+                        {isSavingProfile ? (
+                          <IconLoader2 className="size-4 animate-spin" />
+                        ) : (
+                          <IconCheck className="size-4" />
+                        )}
                         <span>{t("settings.saveProfile")}</span>
                       </Button>
                     </div>

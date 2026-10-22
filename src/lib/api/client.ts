@@ -63,6 +63,12 @@ async function request<T>(
     credentials: "include", // Include cookies for Better Auth sessions
   });
 
+  // Capture BetterAuth Bearer token header if exposed
+  const authHeader = response.headers.get("set-auth-token");
+  if (authHeader) {
+    setAuthToken(authHeader);
+  }
+
   const contentType = response.headers.get("content-type");
   let data: unknown;
 
@@ -103,6 +109,13 @@ export const apiClient = {
       body: body instanceof FormData ? body : JSON.stringify(body),
     }),
 
+  patch: <T>(path: string, body?: unknown, options?: RequestInit) =>
+    request<T>(path, {
+      ...options,
+      method: "PATCH",
+      body: body instanceof FormData ? body : JSON.stringify(body),
+    }),
+
   delete: <T>(path: string, options?: RequestInit) =>
     request<T>(path, { ...options, method: "DELETE" }),
 
@@ -120,6 +133,35 @@ export const apiClient = {
     }
 
     return res.url;
+  },
+
+  getBlobs: async (params?: { limit?: number; cursor?: string; prefix?: string }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.limit) searchParams.set("limit", String(params.limit));
+    if (params?.cursor) searchParams.set("cursor", params.cursor);
+    if (params?.prefix) searchParams.set("prefix", params.prefix);
+    const qs = searchParams.toString();
+    return request<{
+      success: boolean;
+      data: {
+        blobs: Array<{
+          url: string;
+          downloadUrl?: string;
+          pathname: string;
+          size: number;
+          uploadedAt: string;
+        }>;
+        hasMore: boolean;
+        cursor?: string;
+      };
+    }>(`/api/v1/upload${qs ? `?${qs}` : ""}`);
+  },
+
+  deleteBlob: async (url: string) => {
+    return request<{ success: boolean; message: string }>(
+      `/api/v1/upload?url=${encodeURIComponent(url)}`,
+      { method: "DELETE" }
+    );
   },
 };
 

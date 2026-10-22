@@ -30,6 +30,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { getCurrentUser, signOut } from "@/lib/api/auth"
+import { useAuth } from "@/components/auth/auth-provider"
 import { toast } from "sonner"
 
 export function NavUser({
@@ -43,7 +44,20 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
   const router = useRouter()
+  const { user: authUser } = useAuth()
   const [currentUser, setCurrentUser] = useState(initialUser)
+
+  useEffect(() => {
+    if (authUser) {
+      setCurrentUser({
+        name: authUser.name || "Abdullah Al Maksud",
+        email: authUser.email || "contact@abdullahalmaksud.com",
+        avatar:
+          authUser.image ||
+          `https://api.dicebear.com/7.x/avataaars/svg?seed=${authUser.name || "Abdullah"}`,
+      })
+    }
+  }, [authUser])
 
   useEffect(() => {
     async function loadUser() {

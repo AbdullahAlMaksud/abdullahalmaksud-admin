@@ -100,3 +100,12 @@ export async function getCurrentUser(): Promise<ApiResponse<AuthSessionData>> {
 export async function getSession(): Promise<ApiResponse<AuthSessionData>> {
   return apiClient.get<ApiResponse<AuthSessionData>>("/api/auth/get-session");
 }
+
+export async function updateProfile(data: {
+  name?: string;
+  image?: string;
+  avatar?: string;
+}): Promise<ApiResponse<{ user: User }>> {
+  return apiClient.patch<ApiResponse<{ user: User }>>("/api/me", data);
+}
+
