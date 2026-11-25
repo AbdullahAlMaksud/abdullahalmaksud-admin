@@ -1,22 +1,22 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { AppSidebar } from "@/components/dashboard-01/components/app-sidebar"
-import { SiteHeader } from "@/components/dashboard-01/components/site-header"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Blog } from "@/lib/api/types"
 import { getBlogs } from "@/lib/api/blogs"
 import { BlogsTable } from "@/components/modules/blogs/blogs-table"
 import { BlogDeleteDialog } from "@/components/modules/blogs/blog-delete-dialog"
+import { PageSubHeader, StickyActionFooter } from "@/components/dashboard-01/components/sticky-action-bar"
+import { Button } from "@/components/ui/button"
+import { IconCategory, IconPlus, IconTags } from "@tabler/icons-react"
 import { toast } from "sonner"
 
 export default function BlogsPage() {
   const router = useRouter()
+
   const [blogs, setBlogs] = useState<Blog[]>([])
   const [loading, setLoading] = useState(true)
-
-  // Dialog states
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [deletingBlog, setDeletingBlog] = useState<Blog | null>(null)
 
@@ -62,50 +62,61 @@ export default function BlogsPage() {
   const handleUpdateSuccess = (updatedBlog: Blog) => {
     setBlogs((prev) => {
       const targetId = updatedBlog.id || updatedBlog._id
-      return prev.map((b) =>
-        (b.id || b._id) === targetId ? updatedBlog : b
-      )
+      return prev.map((b) => ((b.id || b._id) === targetId ? updatedBlog : b))
     })
   }
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader />
-        <div className="flex flex-1 flex-col p-4 lg:p-6 gap-6 max-w-7xl">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Blog Articles</h2>
-            <p className="text-sm text-muted-foreground">
-              Manage technical writings, tutorials, categories, tags, and publishing status.
-            </p>
-          </div>
+    <div className="flex flex-1 min-w-0 flex-col w-full">
+      <PageSubHeader
+        backHref="/dashboard"
+        backLabel="Overview"
+        description="Manage technical writings, tutorials, categories, tags, and publishing status."
+      />
 
-          <BlogsTable
-            blogs={blogs}
-            loading={loading}
-            onAdd={handleOpenAdd}
-            onEdit={handleOpenEdit}
-            onDelete={handleOpenDelete}
-            onUpdateSuccess={handleUpdateSuccess}
-          />
+      <div className="flex-1 min-w-0 p-4 lg:p-6">
+        <BlogsTable
+          blogs={blogs}
+          loading={loading}
+          showAddButton={false}
+          onAdd={handleOpenAdd}
+          onEdit={handleOpenEdit}
+          onDelete={handleOpenDelete}
+          onUpdateSuccess={handleUpdateSuccess}
+        />
+      </div>
 
-          {/* Delete Confirmation Modal */}
-          <BlogDeleteDialog
-            open={isDeleteOpen}
-            onOpenChange={setIsDeleteOpen}
-            blog={deletingBlog}
-            onSuccess={handleDeleteSuccess}
-          />
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+      <StickyActionFooter
+        left={
+          <>
+            <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1.5">
+              <Link href="/dashboard/blogs/categories">
+                <IconCategory className="size-3.5" />
+                Categories
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1.5">
+              <Link href="/dashboard/blogs/tags">
+                <IconTags className="size-3.5" />
+                Tags
+              </Link>
+            </Button>
+          </>
+        }
+        right={
+          <Button size="sm" onClick={handleOpenAdd} className="h-8 text-xs gap-1.5 font-medium">
+            <IconPlus className="size-3.5" />
+            New Article
+          </Button>
+        }
+      />
+
+      <BlogDeleteDialog
+        open={isDeleteOpen}
+        onOpenChange={setIsDeleteOpen}
+        blog={deletingBlog}
+        onSuccess={handleDeleteSuccess}
+      />
+    </div>
   )
 }

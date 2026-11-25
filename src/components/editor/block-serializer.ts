@@ -32,6 +32,8 @@ import {
 } from "@lexical/markdown";
 
 import type { BlogBlock, SerializedEditorContent } from "./block-types";
+import { $createImageNode, $isImageNode } from "./image-node";
+import { $createTableNode, $isTableNode } from "./table-node";
 
 function generateBlockId(): string {
   return "blk_" + Math.random().toString(36).substring(2, 9);
@@ -113,6 +115,33 @@ export function lexicalToBlocks(editorState: EditorState): SerializedEditorConte
             markdown: listMarkdown,
           },
         });
+      } else if ($isImageNode(node)) {
+        const src = node.getSrc();
+        const alt = node.getAltText();
+        const caption = node.getCaption();
+        const mdImage = `![${alt || caption || ""}](${src})`;
+        blocks.push({
+          id: generateBlockId(),
+          type: "image",
+          data: {
+            url: src,
+            ...(alt ? { alt } : {}),
+            ...(caption ? { caption } : {}),
+            markdown: caption ? `${mdImage}\n*${caption}*` : mdImage,
+          },
+        });
+      } else if ($isTableNode(node)) {
+        const headers = node.getHeaders();
+        const rows = node.getRows();
+        blocks.push({
+          id: generateBlockId(),
+          type: "table",
+          data: {
+            headers,
+            rows,
+            markdown: node.toMarkdown(),
+          },
+        });
       } else if ($isHorizontalRuleNode(node)) {
         blocks.push({
           id: generateBlockId(),
@@ -146,10 +175,23 @@ export function lexicalToBlocks(editorState: EditorState): SerializedEditorConte
 
     // Convert whole document to markdown string using Lexical markdown transformers
     let fullMarkdown = "";
-    try {
-      fullMarkdown = $convertToMarkdownString(TRANSFORMERS);
-    } catch {
-      fullMarkdown = blocks.map((b) => b.data.markdown || b.data.text || "").join("\n\n");
+    const hasCustomBlocks = blocks.some(
+      (b) => b.type === "image" || b.type === "table",
+    );
+    if (hasCustomBlocks) {
+      fullMarkdown = blocks
+        .map((b) => b.data.markdown || b.data.text || "")
+        .filter(Boolean)
+        .join("\n\n");
+    } else {
+      try {
+        fullMarkdown = $convertToMarkdownString(TRANSFORMERS);
+      } catch {
+        fullMarkdown = blocks
+          .map((b) => b.data.markdown || b.data.text || "")
+          .filter(Boolean)
+          .join("\n\n");
+      }
     }
 
     const words = totalText
@@ -239,6 +281,28 @@ export function populateEditorFromBlocks(
               listNode.append(li);
             }
             root.append(listNode);
+            break;
+          }
+          case "image": {
+            const url = block.data?.url || "";
+            if (url) {
+              root.append(
+                $createImageNode({
+                  src: url,
+                  altText: block.data?.alt || "",
+                  caption: block.data?.caption || "",
+                }),
+              );
+            }
+            break;
+          }
+          case "table": {
+            root.append(
+              $createTableNode({
+                headers: block.data?.headers,
+                rows: block.data?.rows,
+              }),
+            );
             break;
           }
           case "divider": {

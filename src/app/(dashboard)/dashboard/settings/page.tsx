@@ -1,10 +1,8 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { Suspense, useState, useEffect, useCallback } from "react"
+import { useSearchParams } from "next/navigation"
 import { useTranslation } from "react-i18next"
-import { AppSidebar } from "@/components/dashboard-01/components/app-sidebar"
-import { SiteHeader } from "@/components/dashboard-01/components/site-header"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ImageUpload } from "@/components/ui/image-upload"
 import { SiteLocalizationEditor } from "@/components/modules/settings/site-localization-editor"
+import { PageSubHeader } from "@/components/dashboard-01/components/sticky-action-bar"
 import { getAboutData, updateAboutData } from "@/lib/api/site"
 import { getCurrentUser, updateProfile } from "@/lib/api/auth"
 import { useAuth } from "@/components/auth/auth-provider"
@@ -51,9 +50,20 @@ const createEmptyAbout = (locale: SupportedLocale): AboutData => ({
   principles: [],
 })
 
-export default function SettingsPage() {
+function SettingsPageContent() {
   const { t } = useTranslation()
   const { refreshUser } = useAuth()
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get("tab")
+  const [activeTab, setActiveTab] = useState(() =>
+    tabParam && ["site", "about", "profile", "cache"].includes(tabParam) ? tabParam : "profile",
+  )
+
+  useEffect(() => {
+    if (tabParam && ["site", "about", "profile", "cache"].includes(tabParam)) {
+      setActiveTab(tabParam)
+    }
+  }, [tabParam])
 
   // Tab: Profile
   const [profile, setProfile] = useState({
@@ -233,25 +243,16 @@ export default function SettingsPage() {
     serverHealth.database?.isConnected ?? serverHealth.database?.state === "connected"
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader />
-        <div className="flex max-w-5xl flex-1 flex-col gap-6 p-4 lg:p-6">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">{t("settings.title")}</h2>
-            <p className="text-sm text-muted-foreground">{t("settings.subtitle")}</p>
-          </div>
+    <div className="flex w-full min-w-0 flex-1 flex-col">
+      <PageSubHeader
+        backHref="/dashboard"
+        backLabel="Overview"
+        description={t("settings.subtitle")}
+      />
 
-          <Tabs defaultValue="site" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 sm:w-[620px]">
+      <div className="flex w-full min-w-0 flex-1 flex-col gap-6 p-4 lg:p-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full min-w-0">
+            <TabsList className="grid w-full max-w-[620px] grid-cols-2 sm:grid-cols-4 h-auto sm:h-9 gap-1 sm:gap-0">
               <TabsTrigger value="site" className="flex items-center gap-1.5 text-xs">
                 <IconLanguage className="size-3.5" />
                 <span>{t("settings.webSiteTab") || "Web & Localization"}</span>
@@ -605,8 +606,9 @@ export default function SettingsPage() {
                         <ImageUpload
                           label="Profile Avatar Photo"
                           value={profile.avatar}
-                          onChange={(url) => setProfile({ ...profile, avatar: url })}
-                          placeholder="https://... or upload to Blob"
+                          onChange={(path) => setProfile({ ...profile, avatar: path })}
+                          module="profile"
+                          folderKey="avatar"
                         />
                       </div>
 
@@ -791,7 +793,7 @@ export default function SettingsPage() {
                         { path: "/api/v1/blogs", desc: "Blogs & Lexical Articles" },
                         { path: "/api/v1/books", desc: "Books & Main Shelf" },
                         { path: "/api/v1/designs", desc: "Graphic Design Showcase" },
-                        { path: "/api/v1/upload", desc: "Vercel Blob Storage" },
+                        { path: "/api/v1/upload", desc: "GitHub Assets Storage" },
                         { path: "/api/v1/messages", desc: "Visitor Inquiries Feed" },
                       ].map((ep) => (
                         <div
@@ -810,8 +812,15 @@ export default function SettingsPage() {
               </Card>
             </TabsContent>
           </Tabs>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+      </div>
+    </div>
+  )
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Loading settings...</div>}>
+      <SettingsPageContent />
+    </Suspense>
   )
 }

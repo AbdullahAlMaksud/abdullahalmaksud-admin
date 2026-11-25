@@ -77,7 +77,7 @@ export function LiveActivityTable() {
             status: p.status === "live" ? "Live" : p.status,
             statusType: p.status === "live" ? "success" : "neutral",
             date: p.year ? `Year ${p.year}` : undefined,
-            editUrl: "/dashboard/projects",
+            editUrl: `/dashboard/projects/${id}/edit`,
           })
         })
       }
@@ -95,7 +95,7 @@ export function LiveActivityTable() {
             status: cs.isPublished ? "Published" : "Draft",
             statusType: cs.isPublished ? "success" : "warning",
             date: cs.duration,
-            editUrl: "/dashboard/case-studies",
+            editUrl: `/dashboard/case-studies/${id}/edit`,
           })
         })
       }
@@ -131,7 +131,7 @@ export function LiveActivityTable() {
             status: "Catalog",
             statusType: "info",
             date: bk.year ? `Year ${bk.year}` : undefined,
-            editUrl: "/dashboard/books",
+            editUrl: `/dashboard/books/${id}/edit`,
           })
         })
       }
@@ -149,7 +149,7 @@ export function LiveActivityTable() {
             status: "Showcase",
             statusType: "neutral",
             date: d.year ? `Year ${d.year}` : undefined,
-            editUrl: "/dashboard/designs",
+            editUrl: `/dashboard/designs/${id}/edit`,
           })
         })
       }
@@ -255,7 +255,7 @@ export function LiveActivityTable() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+      <div className="flex flex-wrap items-center gap-1.5 pb-1 text-xs">
         {[
           { key: "all", label: t("dashboard.allModules") },
           { key: "project", label: t("dashboard.filterProjects") },
@@ -280,15 +280,15 @@ export function LiveActivityTable() {
 
       {/* Unified Table */}
       <div className="rounded-xl border bg-card overflow-hidden shadow-xs">
-        <Table>
+        <Table className="table-fixed w-full">
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
-              <TableHead className="w-[120px]">Module</TableHead>
+              <TableHead className="w-28">Module</TableHead>
               <TableHead>Content Title</TableHead>
-              <TableHead className="hidden md:table-cell">Category</TableHead>
-              <TableHead className="hidden sm:table-cell">Context / Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Action</TableHead>
+              <TableHead className="hidden lg:table-cell w-36">Category</TableHead>
+              <TableHead className="hidden xl:table-cell w-32">Context / Date</TableHead>
+              <TableHead className="w-24">Status</TableHead>
+              <TableHead className="w-24 text-right">Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -313,23 +313,23 @@ export function LiveActivityTable() {
                   <TableCell>{getModuleBadge(item.module)}</TableCell>
 
                   <TableCell className="font-medium">
-                    <div className="flex flex-col max-w-[280px] sm:max-w-md">
-                      <span className="font-semibold text-foreground text-sm truncate">
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-semibold text-foreground text-[13px] truncate">
                         {item.title}
                       </span>
                       {item.subtitle && (
-                        <span className="text-xs text-muted-foreground truncate">
+                        <span className="text-[11px] text-muted-foreground truncate">
                           {item.subtitle}
                         </span>
                       )}
                     </div>
                   </TableCell>
 
-                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
+                  <TableCell className="hidden lg:table-cell text-xs text-muted-foreground truncate">
                     {item.category}
                   </TableCell>
 
-                  <TableCell className="hidden sm:table-cell text-xs text-muted-foreground whitespace-nowrap">
+                  <TableCell className="hidden xl:table-cell text-xs text-muted-foreground">
                     {item.date || "—"}
                   </TableCell>
 

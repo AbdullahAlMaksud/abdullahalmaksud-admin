@@ -1,7 +1,7 @@
 "use client";
 
 import "@/lib/i18n"; // initializes i18next once
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { I18nextProvider } from "react-i18next";
 import i18n, { LOCALES, type Locale, DEFAULT_LOCALE } from "@/lib/i18n";
 
@@ -15,8 +15,22 @@ function useMounted() {
   );
 }
 
+function syncHtmlLang(lng?: string) {
+  if (typeof document !== "undefined") {
+    document.documentElement.lang = lng === "bn" ? "bn" : "en";
+  }
+}
+
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const isMounted = useMounted();
+
+  useEffect(() => {
+    syncHtmlLang(i18n.language);
+    i18n.on("languageChanged", syncHtmlLang);
+    return () => {
+      i18n.off("languageChanged", syncHtmlLang);
+    };
+  }, []);
 
   if (!isMounted) return null;
 
@@ -24,7 +38,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Hook to get and set current locale, persists to localStorage.
+ * Hook to get and set current locale, persists to localStorage and syncs `<html lang>`.
  */
 export function useLocale() {
   const [locale, setLocaleState] = useState<Locale>(
@@ -34,6 +48,7 @@ export function useLocale() {
   const changeLocale = (newLocale: Locale) => {
     i18n.changeLanguage(newLocale);
     localStorage.setItem("locale", newLocale);
+    syncHtmlLang(newLocale);
     setLocaleState(newLocale);
   };
 

@@ -3,6 +3,7 @@
 import React, { useState } from "react"
 import { Book } from "@/lib/api/types"
 import { updateBook } from "@/lib/api/books"
+import { resolveAssetUrl } from "@/lib/asset-url"
 import {
   Table,
   TableBody,
@@ -35,6 +36,7 @@ import { toast } from "sonner"
 interface BooksTableProps {
   books: Book[]
   loading?: boolean
+  showAddButton?: boolean
   onEdit: (book: Book) => void
   onDelete: (book: Book) => void
   onAdd: () => void
@@ -44,6 +46,7 @@ interface BooksTableProps {
 export function BooksTable({
   books,
   loading = false,
+  showAddButton = true,
   onEdit,
   onDelete,
   onAdd,
@@ -87,11 +90,11 @@ export function BooksTable({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 min-w-0 w-full">
       {/* Controls */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-card p-4 rounded-xl border">
-        <div className="flex flex-1 items-center gap-2.5 w-full sm:w-auto">
-          <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-between gap-3 bg-card p-4 rounded-xl border">
+        <div className="flex flex-wrap sm:flex-nowrap flex-1 items-center gap-2.5 min-w-0">
+          <div className="relative flex-1 min-w-[160px] max-w-sm">
             <IconSearch className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
             <Input
               placeholder="Search books by title, author, genre..."
@@ -102,7 +105,7 @@ export function BooksTable({
           </div>
 
           <Select value={filterType} onValueChange={setFilterType}>
-            <SelectTrigger className="w-[160px] h-9 text-xs">
+            <SelectTrigger className="w-full sm:w-[150px] shrink-0 h-9 text-xs">
               <SelectValue placeholder="All Books" />
             </SelectTrigger>
             <SelectContent>
@@ -113,22 +116,24 @@ export function BooksTable({
           </Select>
         </div>
 
-        <Button onClick={onAdd} size="sm" className="gap-1.5 h-9 text-xs w-full sm:w-auto font-medium">
-          <IconPlus className="size-4" /> Add Book
-        </Button>
+        {showAddButton && (
+          <Button onClick={onAdd} size="sm" className="gap-1.5 h-9 text-xs w-full sm:w-auto shrink-0 font-medium">
+            <IconPlus className="size-4" /> Add Book
+          </Button>
+        )}
       </div>
 
       {/* Table */}
       <div className="rounded-xl border bg-card overflow-hidden shadow-xs">
-        <Table>
+        <Table className="table-fixed w-full">
           <TableHeader className="bg-muted/40">
             <TableRow>
-              <TableHead className="w-[40px]"></TableHead>
-              <TableHead className="min-w-[240px]">Book Title & Author</TableHead>
-              <TableHead className="hidden md:table-cell">Genre</TableHead>
-              <TableHead>Rating</TableHead>
-              <TableHead className="hidden lg:table-cell">Read Date</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="w-10"></TableHead>
+              <TableHead>Book Title & Author</TableHead>
+              <TableHead className="hidden lg:table-cell w-40">Genre</TableHead>
+              <TableHead className="hidden sm:table-cell w-28">Rating</TableHead>
+              <TableHead className="hidden xl:table-cell w-28">Read Date</TableHead>
+              <TableHead className="w-24 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -175,12 +180,12 @@ export function BooksTable({
 
                   {/* Title, author & cover */}
                   <TableCell>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       {book.coverImage && (
                         <div className="w-9 h-12 rounded bg-muted border overflow-hidden shrink-0 shadow-xs">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={book.coverImage}
+                            src={resolveAssetUrl(book.coverImage)}
                             alt=""
                             className="size-full object-cover"
                             onError={(e) => {
@@ -189,13 +194,13 @@ export function BooksTable({
                           />
                         </div>
                       )}
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 min-w-0">
                           <span className="font-semibold text-sm text-foreground truncate">
                             {book.title}
                           </span>
                           {book.isRecommended && (
-                            <Badge variant="outline" className="text-[10px] h-4.5 px-1.5 bg-amber-500/10 text-amber-500 border-amber-500/30">
+                            <Badge variant="outline" className="text-[10px] h-4.5 px-1.5 shrink-0 bg-amber-500/10 text-amber-500 border-amber-500/30">
                               Top Pick
                             </Badge>
                           )}
@@ -208,15 +213,15 @@ export function BooksTable({
                   </TableCell>
 
                   {/* Genre */}
-                  <TableCell className="hidden md:table-cell">
-                    <span className="text-xs font-medium text-muted-foreground">
+                  <TableCell className="hidden lg:table-cell">
+                    <span className="text-xs font-medium text-muted-foreground truncate block">
                       {book.genre || "General"}
                     </span>
                   </TableCell>
 
                   {/* Rating */}
-                  <TableCell>
-                    <div className="flex items-center gap-1">
+                  <TableCell className="hidden sm:table-cell">
+                    <div className="flex items-center gap-0.5">
                       {Array.from({ length: 5 }).map((_, i) => (
                         <IconStar
                           key={i}
@@ -231,7 +236,7 @@ export function BooksTable({
                   </TableCell>
 
                   {/* Read Date */}
-                  <TableCell className="hidden lg:table-cell text-xs text-muted-foreground font-mono">
+                  <TableCell className="hidden xl:table-cell text-xs text-muted-foreground font-mono">
                     {book.readDate || book.createdAt?.split("T")[0] || "—"}
                   </TableCell>
 

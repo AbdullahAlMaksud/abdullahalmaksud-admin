@@ -3,6 +3,16 @@
 import React, { useState, useEffect, useCallback, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { apiClient } from "@/lib/api/client"
+import {
+  buildAssetDirectory,
+  filterAssets,
+  normalizeAssetModule,
+  parseAssetPath,
+  resolveAssetUrl,
+  sanitizeAssetKey,
+} from "@/lib/asset-url"
+import { AssetFolderPicker } from "@/components/ui/asset-folder-picker"
+import { AssetFolderFilter } from "@/components/ui/asset-folder-filter"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -49,6 +59,10 @@ export function MediaManager() {
   const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null)
+  const [uploadModule, setUploadModule] = useState("book")
+  const [uploadFolderKey, setUploadFolderKey] = useState("misc")
+  const [moduleFilter, setModuleFilter] = useState("all")
+  const [folderFilter, setFolderFilter] = useState("all")
 
   // Modals
   const [previewBlob, setPreviewBlob] = useState<BlobItem | null>(null)
@@ -89,16 +103,21 @@ export function MediaManager() {
 
     try {
       setUploading(true)
-      const url = await apiClient.upload(file)
-      toast.success(t("media.uploadSuccess"))
+      const pathname = await apiClient.upload(
+        file,
+        normalizeAssetModule(uploadModule),
+        sanitizeAssetKey(uploadFolderKey, "misc"),
+      )
+      const fullUrl = resolveAssetUrl(pathname)
+      toast.success(`Uploaded to ${pathname}`)
       // Prepend to local state
       const newBlob: BlobItem = {
-        url,
-        pathname: file.name,
+        url: fullUrl,
+        pathname,
         size: file.size,
         uploadedAt: new Date().toISOString(),
       }
-      setBlobs((prev) => [newBlob, ...prev.filter((b) => b.url !== url)])
+      setBlobs((prev) => [newBlob, ...prev.filter((b) => b.pathname !== pathname)])
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : t("media.uploadError")
       toast.error(errMsg)
@@ -123,9 +142,9 @@ export function MediaManager() {
     if (!deletingBlob) return
     try {
       setIsDeleting(true)
-      await apiClient.deleteBlob(deletingBlob.url)
+      await apiClient.deleteBlob(deletingBlob.pathname)
       toast.success(t("media.deleteSuccess"))
-      setBlobs((prev) => prev.filter((b) => b.url !== deletingBlob.url))
+      setBlobs((prev) => prev.filter((b) => b.pathname !== deletingBlob.pathname))
       setDeletingBlob(null)
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : t("media.deleteError")
@@ -148,16 +167,24 @@ export function MediaManager() {
     return ["jpg", "jpeg", "png", "webp", "gif", "svg", "avif"].includes(ext || "")
   }
 
-  const filteredBlobs = blobs.filter((b) => {
-    const q = searchQuery.toLowerCase()
-    return (
-      b.pathname?.toLowerCase().includes(q) ||
-      b.url?.toLowerCase().includes(q)
-    )
+  const filteredBlobs = filterAssets(blobs, {
+    moduleFilter,
+    folderFilter,
+    searchQuery,
   })
 
   return (
     <div className="space-y-6">
+      {/* Folder Target Selector */}
+      <AssetFolderPicker
+        module={uploadModule}
+        folderKey={uploadFolderKey}
+        onModuleChange={setUploadModule}
+        onFolderKeyChange={setUploadFolderKey}
+        existingPaths={blobs}
+        disabled={uploading}
+      />
+
       {/* Upload Zone */}
       <div
         onDragOver={(e) => e.preventDefault()}
@@ -192,23 +219,33 @@ export function MediaManager() {
           {uploading ? t("media.uploading") : t("media.uploadAreaTitle")}
         </h3>
         <p className="text-xs text-muted-foreground text-center max-w-md">
-          {t("media.uploadAreaSubtitle")}
+          {t("media.uploadAreaSubtitle")} · <span className="font-mono">{buildAssetDirectory(uploadModule, uploadFolderKey)}/</span>
         </p>
       </div>
 
-      {/* Search & View Controls */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="relative flex-1 max-w-md">
-          <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <Input
-            placeholder={t("media.searchPlaceholder")}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-9"
+      {/* Search, Folder Filter & View Controls */}
+      <div className="flex flex-col lg:flex-row flex-wrap items-stretch lg:items-center justify-between gap-3 bg-card p-4 rounded-xl border">
+        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 flex-1 min-w-0">
+          <div className="relative flex-1 min-w-[160px] max-w-sm">
+            <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Input
+              placeholder={t("media.searchPlaceholder")}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-9 text-xs"
+            />
+          </div>
+
+          <AssetFolderFilter
+            items={blobs}
+            moduleFilter={moduleFilter}
+            folderFilter={folderFilter}
+            onModuleFilterChange={setModuleFilter}
+            onFolderFilterChange={setFolderFilter}
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <Badge variant="outline" className="h-9 px-3 text-xs font-normal">
             {filteredBlobs.length} {t("media.totalFiles")}
           </Badge>
@@ -267,23 +304,24 @@ export function MediaManager() {
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {filteredBlobs.map((blob) => {
-            const isImg = isImageFile(blob.url, blob.pathname)
-            const isCopied = copiedUrl === blob.url
+            const fullUrl = resolveAssetUrl(blob.pathname)
+            const isImg = isImageFile(fullUrl, blob.pathname)
+            const isCopied = copiedUrl === fullUrl
 
             return (
               <div
-                key={blob.url}
+                key={blob.pathname}
                 className="group relative rounded-xl border bg-card overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col"
               >
                 {/* Thumbnail */}
                 <div
-                  onClick={() => isImg && setPreviewBlob(blob)}
+                  onClick={() => isImg && setPreviewBlob({ ...blob, url: fullUrl })}
                   className="aspect-square bg-muted/40 relative overflow-hidden flex items-center justify-center cursor-pointer"
                 >
                   {isImg ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={blob.url}
+                      src={fullUrl}
                       alt={blob.pathname || "Media"}
                       className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
                       loading="lazy"
@@ -299,7 +337,7 @@ export function MediaManager() {
                       variant="secondary"
                       onClick={(e) => {
                         e.stopPropagation()
-                        handleCopyUrl(blob.url)
+                        handleCopyUrl(fullUrl)
                       }}
                       className="size-8 rounded-full shadow-md"
                       title={t("media.copyUrl")}
@@ -318,7 +356,7 @@ export function MediaManager() {
                       title="Open in new tab"
                     >
                       <a
-                        href={blob.url}
+                        href={fullUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
@@ -336,16 +374,19 @@ export function MediaManager() {
                       className="text-xs font-semibold truncate text-foreground"
                       title={blob.pathname}
                     >
-                      {blob.pathname || "Untitled"}
+                      {parseAssetPath(blob.pathname).filename || blob.pathname || "Untitled"}
                     </span>
-                    <span className="text-[11px] text-muted-foreground">
-                      {formatFileSize(blob.size)}
-                    </span>
+                    <div className="flex items-center justify-between gap-1.5 text-[10px] text-muted-foreground">
+                      <span className="font-mono truncate" title={parseAssetPath(blob.pathname).directory}>
+                        {parseAssetPath(blob.pathname).module}/{parseAssetPath(blob.pathname).folderKey}
+                      </span>
+                      <span className="shrink-0">{formatFileSize(blob.size)}</span>
+                    </div>
                   </div>
 
                   <div className="flex items-center justify-between pt-2 border-t text-[11px] text-muted-foreground">
                     <button
-                      onClick={() => handleCopyUrl(blob.url)}
+                      onClick={() => handleCopyUrl(fullUrl)}
                       className="flex items-center gap-1 hover:text-foreground text-xs transition-colors"
                     >
                       {isCopied ? (
@@ -353,7 +394,7 @@ export function MediaManager() {
                       ) : (
                         <>
                           <IconCopy className="size-3" />
-                          <span>Copy</span>
+                          <span>Copy URL</span>
                         </>
                       )}
                     </button>
@@ -374,23 +415,24 @@ export function MediaManager() {
         /* List View */
         <div className="rounded-xl border bg-card overflow-hidden shadow-xs divide-y">
           {filteredBlobs.map((blob) => {
-            const isImg = isImageFile(blob.url, blob.pathname)
-            const isCopied = copiedUrl === blob.url
+            const fullUrl = resolveAssetUrl(blob.pathname)
+            const isImg = isImageFile(fullUrl, blob.pathname)
+            const isCopied = copiedUrl === fullUrl
 
             return (
               <div
-                key={blob.url}
+                key={blob.pathname}
                 className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors gap-3"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div
-                    onClick={() => isImg && setPreviewBlob(blob)}
+                    onClick={() => isImg && setPreviewBlob({ ...blob, url: fullUrl })}
                     className="size-11 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden cursor-pointer"
                   >
                     {isImg ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={blob.url}
+                        src={fullUrl}
                         alt=""
                         className="object-cover w-full h-full"
                       />
@@ -404,7 +446,7 @@ export function MediaManager() {
                       {blob.pathname || "Untitled"}
                     </span>
                     <span className="text-xs text-muted-foreground truncate max-w-sm">
-                      {blob.url}
+                      {fullUrl}
                     </span>
                   </div>
                 </div>
@@ -417,7 +459,7 @@ export function MediaManager() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleCopyUrl(blob.url)}
+                    onClick={() => handleCopyUrl(fullUrl)}
                     className="h-8 gap-1.5 text-xs"
                   >
                     {isCopied ? (
@@ -428,7 +470,7 @@ export function MediaManager() {
                     ) : (
                       <>
                         <IconCopy className="size-3.5" />
-                        <span>Copy URL</span>
+                        <span>Copy Full URL</span>
                       </>
                     )}
                   </Button>
@@ -458,13 +500,13 @@ export function MediaManager() {
                 {previewBlob.pathname}
               </DialogTitle>
               <DialogDescription className="text-xs truncate">
-                {previewBlob.url}
+                {resolveAssetUrl(previewBlob.pathname)}
               </DialogDescription>
             </DialogHeader>
             <div className="flex items-center justify-center max-h-[70vh] bg-black/5 rounded-lg overflow-hidden p-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={previewBlob.url}
+                src={resolveAssetUrl(previewBlob.pathname)}
                 alt={previewBlob.pathname}
                 className="max-h-[65vh] object-contain rounded-md"
               />
@@ -477,11 +519,11 @@ export function MediaManager() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleCopyUrl(previewBlob.url)}
+                  onClick={() => handleCopyUrl(resolveAssetUrl(previewBlob.pathname))}
                   className="gap-1.5 text-xs"
                 >
                   <IconCopy className="size-3.5" />
-                  <span>Copy CDN URL</span>
+                  <span>Copy Full URL</span>
                 </Button>
                 <Button
                   size="sm"

@@ -116,7 +116,7 @@ export function StatsCards() {
   return (
     <div className="space-y-4 px-4 lg:px-6">
       {/* Live Server & DB Health Indicator */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl border bg-muted/30 text-sm">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl border bg-muted/30 text-xs">
         <div className="flex items-center gap-2.5">
           <div
             className={`p-2 rounded-lg ${
@@ -161,11 +161,11 @@ export function StatsCards() {
         {/* Projects Card */}
         <Card className="@container/card">
           <CardHeader>
-            <CardDescription className="flex items-center gap-1.5 font-medium">
-              <IconBriefcase className="size-4 text-emerald-500" />
+            <CardDescription className="flex items-center gap-1.5 font-medium text-xs">
+              <IconBriefcase className="size-3.5 text-emerald-500" />
               {t("dashboard.totalProjects")}
             </CardDescription>
-            <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+            <CardTitle className="text-xl font-semibold tabular-nums @[250px]/card:text-2xl">
               {loading ? "..." : counts.projects}
             </CardTitle>
             <CardAction>
@@ -184,11 +184,11 @@ export function StatsCards() {
         {/* Case Studies Card */}
         <Card className="@container/card">
           <CardHeader>
-            <CardDescription className="flex items-center gap-1.5 font-medium">
-              <IconBuildingArch className="size-4 text-cyan-500" />
+            <CardDescription className="flex items-center gap-1.5 font-medium text-xs">
+              <IconBuildingArch className="size-3.5 text-cyan-500" />
               {t("dashboard.totalCaseStudies")}
             </CardDescription>
-            <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+            <CardTitle className="text-xl font-semibold tabular-nums @[250px]/card:text-2xl">
               {loading ? "..." : counts.caseStudies}
             </CardTitle>
             <CardAction>
@@ -207,11 +207,11 @@ export function StatsCards() {
         {/* Blogs Card */}
         <Card className="@container/card">
           <CardHeader>
-            <CardDescription className="flex items-center gap-1.5 font-medium">
-              <IconArticle className="size-4 text-purple-500" />
+            <CardDescription className="flex items-center gap-1.5 font-medium text-xs">
+              <IconArticle className="size-3.5 text-purple-500" />
               {t("dashboard.totalBlogs")}
             </CardDescription>
-            <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+            <CardTitle className="text-xl font-semibold tabular-nums @[250px]/card:text-2xl">
               {loading ? "..." : counts.blogs}
             </CardTitle>
             <CardAction>
@@ -230,11 +230,11 @@ export function StatsCards() {
         {/* Books Card */}
         <Card className="@container/card">
           <CardHeader>
-            <CardDescription className="flex items-center gap-1.5 font-medium">
-              <IconBook className="size-4 text-blue-500" />
+            <CardDescription className="flex items-center gap-1.5 font-medium text-xs">
+              <IconBook className="size-3.5 text-blue-500" />
               {t("dashboard.totalBooks")}
             </CardDescription>
-            <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+            <CardTitle className="text-xl font-semibold tabular-nums @[250px]/card:text-2xl">
               {loading ? "..." : counts.books}
             </CardTitle>
             <CardAction>
@@ -253,11 +253,11 @@ export function StatsCards() {
         {/* Graphic Designs Card */}
         <Card className="@container/card">
           <CardHeader>
-            <CardDescription className="flex items-center gap-1.5 font-medium">
-              <IconPalette className="size-4 text-rose-500" />
+            <CardDescription className="flex items-center gap-1.5 font-medium text-xs">
+              <IconPalette className="size-3.5 text-rose-500" />
               {t("dashboard.totalDesigns")}
             </CardDescription>
-            <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+            <CardTitle className="text-xl font-semibold tabular-nums @[250px]/card:text-2xl">
               {loading ? "..." : counts.designs}
             </CardTitle>
             <CardAction>

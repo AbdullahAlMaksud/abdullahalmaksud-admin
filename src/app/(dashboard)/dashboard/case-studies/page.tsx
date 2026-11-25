@@ -1,25 +1,24 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
-import { AppSidebar } from "@/components/dashboard-01/components/app-sidebar"
-import { SiteHeader } from "@/components/dashboard-01/components/site-header"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { CaseStudy } from "@/lib/api/types"
 import { getCaseStudies } from "@/lib/api/case-studies"
 import { CaseStudiesTable } from "@/components/modules/case-studies/case-studies-table"
-import { CaseStudyFormDialog } from "@/components/modules/case-studies/case-study-form-dialog"
 import { CaseStudyDeleteDialog } from "@/components/modules/case-studies/case-study-delete-dialog"
+import { PageSubHeader, StickyActionFooter } from "@/components/dashboard-01/components/sticky-action-bar"
+import { Button } from "@/components/ui/button"
+import { IconCategory, IconPlus, IconTags } from "@tabler/icons-react"
 import { toast } from "sonner"
 
 export default function CaseStudiesPage() {
   const { t } = useTranslation()
+  const router = useRouter()
+
   const [caseStudies, setCaseStudies] = useState<CaseStudy[]>([])
   const [loading, setLoading] = useState(true)
-
-  // Dialog states
-  const [isFormOpen, setIsFormOpen] = useState(false)
-  const [selectedCaseStudy, setSelectedCaseStudy] = useState<CaseStudy | null>(null)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [deletingCaseStudy, setDeletingCaseStudy] = useState<CaseStudy | null>(null)
 
@@ -44,29 +43,19 @@ export default function CaseStudiesPage() {
   }, [loadCaseStudies])
 
   const handleOpenAdd = () => {
-    setSelectedCaseStudy(null)
-    setIsFormOpen(true)
+    router.push("/dashboard/case-studies/create")
   }
 
   const handleOpenEdit = (item: CaseStudy) => {
-    setSelectedCaseStudy(item)
-    setIsFormOpen(true)
+    const targetId = item.id || item._id
+    if (targetId) {
+      router.push(`/dashboard/case-studies/${targetId}/edit`)
+    }
   }
 
   const handleOpenDelete = (item: CaseStudy) => {
     setDeletingCaseStudy(item)
     setIsDeleteOpen(true)
-  }
-
-  const handleFormSuccess = (savedItem: CaseStudy) => {
-    setCaseStudies((prev) => {
-      const targetId = savedItem.id || savedItem._id
-      const exists = prev.some((c) => (c.id || c._id) === targetId)
-      if (exists) {
-        return prev.map((c) => ((c.id || c._id) === targetId ? savedItem : c))
-      }
-      return [savedItem, ...prev]
-    })
   }
 
   const handleDeleteSuccess = (deletedId: string) => {
@@ -76,60 +65,61 @@ export default function CaseStudiesPage() {
   const handleUpdateSuccess = (updatedItem: CaseStudy) => {
     setCaseStudies((prev) => {
       const targetId = updatedItem.id || updatedItem._id
-      return prev.map((c) =>
-        (c.id || c._id) === targetId ? updatedItem : c
-      )
+      return prev.map((c) => ((c.id || c._id) === targetId ? updatedItem : c))
     })
   }
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader />
-        <div className="flex flex-1 flex-col p-4 lg:p-6 gap-6 max-w-7xl">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">
-              {t("caseStudies.title")}
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              {t("caseStudies.subtitle")}
-            </p>
-          </div>
+    <div className="flex flex-1 min-w-0 flex-col w-full">
+      <PageSubHeader
+        backHref="/dashboard"
+        backLabel="Overview"
+        description={t("caseStudies.subtitle")}
+      />
 
-          <CaseStudiesTable
-            caseStudies={caseStudies}
-            loading={loading}
-            onAdd={handleOpenAdd}
-            onEdit={handleOpenEdit}
-            onDelete={handleOpenDelete}
-            onUpdateSuccess={handleUpdateSuccess}
-          />
+      <div className="flex-1 min-w-0 p-4 lg:p-6">
+        <CaseStudiesTable
+          caseStudies={caseStudies}
+          loading={loading}
+          showAddButton={false}
+          onAdd={handleOpenAdd}
+          onEdit={handleOpenEdit}
+          onDelete={handleOpenDelete}
+          onUpdateSuccess={handleUpdateSuccess}
+        />
+      </div>
 
-          {/* Form Modal (Create / Edit) */}
-          <CaseStudyFormDialog
-            open={isFormOpen}
-            onOpenChange={setIsFormOpen}
-            caseStudy={selectedCaseStudy}
-            onSuccess={handleFormSuccess}
-          />
+      <StickyActionFooter
+        left={
+          <>
+            <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1.5">
+              <Link href="/dashboard/case-studies/categories">
+                <IconCategory className="size-3.5" />
+                Categories
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1.5">
+              <Link href="/dashboard/case-studies/tags">
+                <IconTags className="size-3.5" />
+                Tags & Stack
+              </Link>
+            </Button>
+          </>
+        }
+        right={
+          <Button size="sm" onClick={handleOpenAdd} className="h-8 text-xs gap-1.5 font-medium">
+            <IconPlus className="size-3.5" />
+            {t("caseStudies.addNew")}
+          </Button>
+        }
+      />
 
-          {/* Delete Confirmation Modal */}
-          <CaseStudyDeleteDialog
-            open={isDeleteOpen}
-            onOpenChange={setIsDeleteOpen}
-            caseStudy={deletingCaseStudy}
-            onSuccess={handleDeleteSuccess}
-          />
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+      <CaseStudyDeleteDialog
+        open={isDeleteOpen}
+        onOpenChange={setIsDeleteOpen}
+        caseStudy={deletingCaseStudy}
+        onSuccess={handleDeleteSuccess}
+      />
+    </div>
   )
 }

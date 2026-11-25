@@ -12,12 +12,16 @@ import {
   IconLoader2,
   IconPlus,
   IconRefresh,
+  IconSettings,
   IconTrash,
 } from "@tabler/icons-react"
+import Link from "next/link"
+import { PageSubHeader, StickyActionFooter } from "@/components/dashboard-01/components/sticky-action-bar"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { ImageUpload } from "@/components/ui/image-upload"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getAllSiteLocales, resetSiteData, updateSiteData } from "@/lib/api/site"
@@ -25,7 +29,7 @@ import type { SiteLocaleData, SupportedLocale } from "@/lib/api/types"
 
 type EditorMode = "form" | "json"
 
-export function SiteLocalizationEditor() {
+export function SiteLocalizationEditor({ showStickyHeader = false }: { showStickyHeader?: boolean }) {
   const { t } = useTranslation()
 
   const [activeLocale, setActiveLocale] = useState<SupportedLocale>("en")
@@ -216,8 +220,17 @@ export function SiteLocalizationEditor() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Top Toolbar: Locale Switcher + Mode Toggle + Actions */}
+    <div className="flex flex-1 min-w-0 flex-col w-full">
+      {showStickyHeader && (
+        <PageSubHeader
+          backHref="/dashboard/settings"
+          backLabel="Back to Settings"
+          description="Manage bilingual site content (EN / BN), hero identity, navigation labels, and public metadata."
+        />
+      )}
+
+      <div className={showStickyHeader ? "flex-1 min-w-0 p-4 lg:p-6 space-y-4" : "space-y-4"}>
+        {/* Top Toolbar: Locale Switcher + Mode Toggle + Actions */}
       <Card>
         <CardHeader className="pb-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -441,16 +454,17 @@ export function SiteLocalizationEditor() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Hero Portrait Image URL</Label>
-                    <Input
+                    <ImageUpload
+                      label="Hero Portrait Image"
                       value={currentData.identity.portraitUrl || ""}
-                      onChange={(e) =>
+                      onChange={(path) =>
                         updateSectionField("identity", (p) => ({
                           ...p,
-                          portraitUrl: e.target.value,
+                          portraitUrl: path,
                         }))
                       }
-                      placeholder="/images/portrait.png"
+                      module="site"
+                      folderKey="identity"
                     />
                   </div>
                   <div className="space-y-2">
@@ -1004,32 +1018,81 @@ export function SiteLocalizationEditor() {
               </TabsContent>
             </Tabs>
 
-            <div className="mt-6 flex items-center justify-between border-t pt-4">
+            {!showStickyHeader && (
+              <div className="mt-6 flex items-center justify-between border-t pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleReset}
+                  disabled={isResetting || isSaving}
+                >
+                  {isResetting ? (
+                    <IconLoader2 className="mr-1.5 size-4 animate-spin" />
+                  ) : (
+                    <IconRefresh className="mr-1.5 size-4" />
+                  )}
+                  <span>Reset {activeLocale.toUpperCase()} Defaults</span>
+                </Button>
+
+                <Button type="button" onClick={handleSave} disabled={isSaving}>
+                  {isSaving ? (
+                    <IconLoader2 className="mr-1.5 size-4 animate-spin" />
+                  ) : (
+                    <IconCheck className="mr-1.5 size-4" />
+                  )}
+                  <span>Save {activeLocale.toUpperCase()} Settings</span>
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+      </div>
+
+      {showStickyHeader && (
+        <StickyActionFooter
+          left={
+            <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1.5">
+              <Link href="/dashboard/settings">
+                <IconSettings className="size-3.5" />
+                <span>System & Profile Settings</span>
+              </Link>
+            </Button>
+          }
+          right={
+            <>
               <Button
                 type="button"
                 variant="outline"
+                size="sm"
                 onClick={handleReset}
                 disabled={isResetting || isSaving}
+                className="h-8 text-xs gap-1.5"
               >
                 {isResetting ? (
-                  <IconLoader2 className="mr-1.5 size-4 animate-spin" />
+                  <IconLoader2 className="size-3.5 animate-spin" />
                 ) : (
-                  <IconRefresh className="mr-1.5 size-4" />
+                  <IconRefresh className="size-3.5" />
                 )}
-                <span>Reset {activeLocale.toUpperCase()} Defaults</span>
+                <span>Reset {activeLocale.toUpperCase()}</span>
               </Button>
-
-              <Button type="button" onClick={handleSave} disabled={isSaving}>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleSave}
+                disabled={isSaving}
+                className="h-8 text-xs gap-1.5 font-medium"
+              >
                 {isSaving ? (
-                  <IconLoader2 className="mr-1.5 size-4 animate-spin" />
+                  <IconLoader2 className="size-3.5 animate-spin" />
                 ) : (
-                  <IconCheck className="mr-1.5 size-4" />
+                  <IconCheck className="size-3.5" />
                 )}
-                <span>Save {activeLocale.toUpperCase()} Settings</span>
+                <span>Save {activeLocale.toUpperCase()}</span>
               </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </>
+          }
+        />
       )}
     </div>
   )

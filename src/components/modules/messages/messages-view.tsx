@@ -71,20 +71,20 @@ export function MessagesView() {
   })
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 min-w-0 w-full">
       {/* Controls: Search & Refresh */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="relative flex-1 max-w-md">
-          <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+      <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-between gap-3 bg-card p-4 rounded-xl border">
+        <div className="relative flex-1 min-w-[160px] max-w-sm">
+          <IconSearch className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
           <Input
             placeholder={t("messages.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-9"
+            className="pl-9 h-9 text-xs"
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <Badge variant="outline" className="h-9 px-3 text-xs font-normal">
             {filteredMessages.length} {t("messages.totalMessages")}
           </Badge>
@@ -102,15 +102,15 @@ export function MessagesView() {
       </div>
 
       {/* Messages Table */}
-      <div className="rounded-lg border bg-card overflow-hidden shadow-xs">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50 hover:bg-muted/50">
-              <TableHead className="w-[40px]"></TableHead>
-              <TableHead>{t("messages.tableSender")}</TableHead>
+      <div className="rounded-xl border bg-card overflow-hidden shadow-xs">
+        <Table className="table-fixed w-full">
+          <TableHeader className="bg-muted/40">
+            <TableRow>
+              <TableHead className="w-10"></TableHead>
+              <TableHead className="w-48">{t("messages.tableSender")}</TableHead>
               <TableHead>{t("messages.tableSubject")}</TableHead>
-              <TableHead className="hidden sm:table-cell">{t("messages.tableDate")}</TableHead>
-              <TableHead className="text-right">{t("messages.tableActions")}</TableHead>
+              <TableHead className="hidden lg:table-cell w-32">{t("messages.tableDate")}</TableHead>
+              <TableHead className="w-24 text-right">{t("messages.tableActions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -151,18 +151,18 @@ export function MessagesView() {
                   </TableCell>
 
                   <TableCell className="font-medium">
-                    <div className="flex flex-col">
-                      <span className="font-semibold text-foreground text-sm">
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-semibold text-foreground text-sm truncate">
                         {msg.name}
                       </span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-muted-foreground truncate">
                         {msg.email}
                       </span>
                     </div>
                   </TableCell>
 
                   <TableCell>
-                    <div className="flex flex-col max-w-[280px] sm:max-w-md">
+                    <div className="flex flex-col min-w-0">
                       <span className="text-sm font-medium truncate text-foreground">
                         {msg.subject || "No Subject"}
                       </span>
@@ -172,7 +172,7 @@ export function MessagesView() {
                     </div>
                   </TableCell>
 
-                  <TableCell className="hidden sm:table-cell text-xs text-muted-foreground whitespace-nowrap">
+                  <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
                     {msg.date || "Recent"}
                   </TableCell>
 

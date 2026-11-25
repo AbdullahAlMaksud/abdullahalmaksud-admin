@@ -125,16 +125,22 @@ export const apiClient = {
     if (module) formData.append("module", module);
     if (folderKey) formData.append("folderKey", folderKey);
 
-    const res = await request<{ success: boolean; url: string }>("/api/v1/upload", {
+    const res = await request<{
+      success: boolean;
+      path?: string;
+      pathname?: string;
+      url?: string;
+    }>("/api/v1/upload", {
       method: "POST",
       body: formData,
     });
 
-    if (!res.url) {
-      throw new ApiError("Upload succeeded but no URL was returned", 500);
+    const relativePath = res.pathname || res.path;
+    if (!relativePath) {
+      throw new ApiError("Upload succeeded but no relative asset path was returned", 500);
     }
 
-    return res.url;
+    return relativePath;
   },
 
   getBlobs: async (params?: { limit?: number; cursor?: string; prefix?: string }) => {
@@ -159,9 +165,9 @@ export const apiClient = {
     }>(`/api/v1/upload${qs ? `?${qs}` : ""}`);
   },
 
-  deleteBlob: async (url: string) => {
+  deleteBlob: async (pathOrUrl: string) => {
     return request<{ success: boolean; message: string }>(
-      `/api/v1/upload?url=${encodeURIComponent(url)}`,
+      `/api/v1/upload?path=${encodeURIComponent(pathOrUrl)}`,
       { method: "DELETE" }
     );
   },

@@ -25,6 +25,17 @@ import type { EditorState } from "lexical";
 
 import { editorTheme } from "./editor-theme";
 import { EditorToolbar } from "./editor-toolbar";
+import { FloatingToolbar } from "./floating-toolbar";
+import { KeyboardShortcutsPlugin } from "./keyboard-shortcuts-plugin";
+import { BlockGutterPlugin } from "./block-gutter-plugin";
+import { SlashCommandPlugin } from "./slash-command-plugin";
+import { InsertImageDialog } from "./insert-image-dialog";
+import {
+  insertImageBlock,
+  type ImageInsertRequest,
+} from "./block-palette";
+import { ImageNode } from "./image-node";
+import { TableNode } from "./table-node";
 import {
   lexicalToBlocks,
   populateEditorFromBlocks,
@@ -33,22 +44,22 @@ import type { BlogBlock, SerializedEditorContent } from "./block-types";
 import { IconBraces, IconWriting } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 
-interface LexicalBlockEditorProps {
-  initialContent?: any;
+export interface LexicalBlockEditorProps {
+  initialContent?: unknown;
   onChange?: (blocks: BlogBlock[], serialized: SerializedEditorContent) => void;
   placeholder?: string;
   className?: string;
   onOpenBlockInspector?: () => void;
+  borderless?: boolean;
+  assetModule?: string;
+  folderKey?: string;
+  showToolbar?: boolean;
 }
 
 /**
- * Hydrates initial content when the editor mounts or changes.
+ * Hydrates initial content when the editor mounts.
  */
-function InitializerPlugin({
-  initialContent,
-}: {
-  initialContent?: any;
-}) {
+function InitializerPlugin({ initialContent }: { initialContent?: unknown }) {
   const [editor] = useLexicalComposerContext();
   const initializedRef = useRef(false);
 
@@ -62,18 +73,74 @@ function InitializerPlugin({
   return null;
 }
 
+/**
+ * Coordinates image uploads / gallery selection inside the active LexicalComposer context.
+ */
+function EditorImageModalPlugin({
+  request,
+  onClose,
+  assetModule,
+  folderKey,
+}: {
+  request: ImageInsertRequest | null;
+  onClose: () => void;
+  assetModule: string;
+  folderKey: string;
+}) {
+  const [editor] = useLexicalComposerContext();
+
+  return (
+    <InsertImageDialog
+      open={request !== null}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      assetModule={assetModule}
+      folderKey={folderKey}
+      onConfirm={({ src, caption, altText }) => {
+        insertImageBlock({
+          editor,
+          src,
+          caption,
+          altText,
+          request: request ?? undefined,
+        });
+      }}
+    />
+  );
+}
+
+/**
+ * Notion-style modular block editor supporting left-gutter '+' insertion & drag-and-drop
+ * reordering, '/' slash commands, floating inline selection toolbar, keyboard shortcuts,
+ * and inline image + caption blocks.
+ */
 export function LexicalBlockEditor({
   initialContent,
   onChange,
-  placeholder = "Start writing your article... (Type '#' for heading, '>' for quote, '-' for list)",
+  placeholder = "Type '/' for commands, or start writing... (Ctrl+B, Ctrl+I, Ctrl+U)",
   className = "",
   onOpenBlockInspector,
+  borderless = false,
+  assetModule = "blog",
+  folderKey = "misc",
+  showToolbar = true,
 }: LexicalBlockEditorProps) {
+  const [floatingAnchorElem, setFloatingAnchorElem] =
+    useState<HTMLDivElement | null>(null);
+  const [imageModalRequest, setImageModalRequest] =
+    useState<ImageInsertRequest | null>(null);
   const [stats, setStats] = useState({
     blockCount: 0,
     wordCount: 0,
     charCount: 0,
   });
+
+  const onFloatingRef = (elem: HTMLDivElement | null) => {
+    if (elem !== null) {
+      setFloatingAnchorElem(elem);
+    }
+  };
 
   const editorConfig: InitialConfigType = {
     namespace: "AdminLexicalBlockEditor",
@@ -88,9 +155,11 @@ export function LexicalBlockEditor({
       LinkNode,
       AutoLinkNode,
       HorizontalRuleNode,
+      ImageNode,
+      TableNode,
     ],
     onError(error: Error) {
-      console.error("[Lexical Editor Error]:", error);
+      console.error("[LexicalEditor Error]:", error);
     },
   };
 
@@ -108,21 +177,46 @@ export function LexicalBlockEditor({
 
   return (
     <div
-      className={`flex flex-col border border-border rounded-xl bg-card shadow-xs overflow-hidden transition-colors ${className}`}
+      className={
+        borderless
+          ? `flex flex-1 flex-col w-full bg-transparent ${className}`
+          : `flex flex-col border border-border rounded-xl bg-card shadow-xs overflow-hidden transition-colors ${className}`
+      }
     >
       <LexicalComposer initialConfig={editorConfig}>
-        {/* Rich Interactive Sticky Toolbar */}
-        <EditorToolbar />
+        {showToolbar && (
+          <EditorToolbar
+            borderless={borderless}
+            onRequestImage={() => setImageModalRequest({ mode: "cursor" })}
+          />
+        )}
 
-        {/* Content Editable Area */}
-        <div className="relative min-h-[380px] px-6 py-4 text-foreground focus-within:outline-hidden">
+        {/* Content Editable Canvas with Left Gutter Margin for + / Drag Handle */}
+        <div
+          ref={onFloatingRef}
+          className={
+            borderless
+              ? "relative flex-1 min-h-[480px] py-5 pl-11 sm:pl-14 text-foreground focus-within:outline-hidden"
+              : "relative min-h-[360px] py-4 pl-11 sm:pl-14 pr-5 text-foreground focus-within:outline-hidden"
+          }
+        >
           <RichTextPlugin
             contentEditable={
               <ContentEditable
-                className="min-h-[360px] outline-hidden text-sm sm:text-base leading-relaxed selection:bg-primary/20"
+                className={
+                  borderless
+                    ? "min-h-[450px] outline-hidden text-sm sm:text-base leading-relaxed selection:bg-primary/20"
+                    : "min-h-[330px] outline-hidden text-sm sm:text-base leading-relaxed selection:bg-primary/20"
+                }
                 aria-placeholder={placeholder}
                 placeholder={
-                  <div className="pointer-events-none absolute left-6 top-4 select-none text-muted-foreground/50 text-sm sm:text-base">
+                  <div
+                    className={
+                      borderless
+                        ? "pointer-events-none absolute left-11 sm:left-14 top-5 select-none text-muted-foreground/45 text-sm sm:text-base"
+                        : "pointer-events-none absolute left-11 sm:left-14 top-4 select-none text-muted-foreground/50 text-sm sm:text-base"
+                    }
+                  >
                     {placeholder}
                   </div>
                 }
@@ -135,19 +229,47 @@ export function LexicalBlockEditor({
           <LinkPlugin />
           <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
           <HorizontalRulePlugin />
+          <KeyboardShortcutsPlugin />
+          <FloatingToolbar />
+          <SlashCommandPlugin
+            onRequestImage={(req) => setImageModalRequest(req)}
+          />
+          {floatingAnchorElem && (
+            <BlockGutterPlugin
+              anchorElem={floatingAnchorElem}
+              onRequestImage={(req) => setImageModalRequest(req)}
+            />
+          )}
+          <EditorImageModalPlugin
+            request={imageModalRequest}
+            onClose={() => setImageModalRequest(null)}
+            assetModule={assetModule}
+            folderKey={folderKey}
+          />
           <InitializerPlugin initialContent={initialContent} />
           <OnChangePlugin onChange={handleEditorChange} />
         </div>
 
         {/* Status Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2 border-t border-border/80 bg-muted/20 text-xs text-muted-foreground">
+        <div
+          className={
+            borderless
+              ? "flex flex-wrap items-center justify-between gap-3 pt-3 pl-11 sm:pl-14 border-t border-neutral-200/70 text-xs text-muted-foreground"
+              : "flex flex-wrap items-center justify-between gap-3 px-4 py-2 border-t border-border/80 bg-muted/20 text-xs text-muted-foreground"
+          }
+        >
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1 font-medium text-foreground/80">
               <IconWriting className="size-3.5 text-primary" />
-              <span>{stats.blockCount} {stats.blockCount === 1 ? "Block" : "Blocks"}</span>
+              <span>
+                {stats.blockCount} {stats.blockCount === 1 ? "Block" : "Blocks"}
+              </span>
             </span>
             <span>{stats.wordCount} words</span>
             <span className="hidden sm:inline">{stats.charCount} characters</span>
+            <span className="hidden md:inline text-muted-foreground/60 font-mono text-[11px]">
+              Type &apos;/&apos; for blocks
+            </span>
           </div>
 
           <div className="flex items-center gap-2">

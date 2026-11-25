@@ -57,6 +57,12 @@ export async function getCaseStudyBySlug(
   return apiClient.get<ApiResponse<CaseStudy>>(`/api/v1/case-studies/${slug}`);
 }
 
+export async function getCaseStudyById(
+  id: string
+): Promise<ApiResponse<CaseStudy>> {
+  return apiClient.get<ApiResponse<CaseStudy>>(`/api/v1/case-studies/id/${id}`);
+}
+
 export async function createCaseStudy(
   data: Omit<CaseStudy, "id" | "createdAt" | "updatedAt">
 ): Promise<ApiResponse<CaseStudy>> {

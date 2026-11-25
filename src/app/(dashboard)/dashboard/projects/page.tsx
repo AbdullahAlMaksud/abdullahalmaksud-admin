@@ -1,23 +1,22 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from "react"
-import { AppSidebar } from "@/components/dashboard-01/components/app-sidebar"
-import { SiteHeader } from "@/components/dashboard-01/components/site-header"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Project } from "@/lib/api/types"
 import { getProjects } from "@/lib/api/projects"
 import { ProjectsTable } from "@/components/modules/projects/projects-table"
-import { ProjectFormDialog } from "@/components/modules/projects/project-form-dialog"
 import { ProjectDeleteDialog } from "@/components/modules/projects/project-delete-dialog"
+import { PageSubHeader, StickyActionFooter } from "@/components/dashboard-01/components/sticky-action-bar"
+import { Button } from "@/components/ui/button"
+import { IconCategory, IconPlus, IconTags } from "@tabler/icons-react"
 import { toast } from "sonner"
 
 export default function ProjectsPage() {
+  const router = useRouter()
+
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
-
-  // Dialog states
-  const [isFormOpen, setIsFormOpen] = useState(false)
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [deletingProject, setDeletingProject] = useState<Project | null>(null)
 
@@ -41,29 +40,19 @@ export default function ProjectsPage() {
   }, [loadProjects])
 
   const handleOpenAdd = () => {
-    setSelectedProject(null)
-    setIsFormOpen(true)
+    router.push("/dashboard/projects/create")
   }
 
   const handleOpenEdit = (project: Project) => {
-    setSelectedProject(project)
-    setIsFormOpen(true)
+    const targetId = project.id || project._id
+    if (targetId) {
+      router.push(`/dashboard/projects/${targetId}/edit`)
+    }
   }
 
   const handleOpenDelete = (project: Project) => {
     setDeletingProject(project)
     setIsDeleteOpen(true)
-  }
-
-  const handleFormSuccess = (savedProject: Project) => {
-    setProjects((prev) => {
-      const targetId = savedProject.id || savedProject._id
-      const exists = prev.some((p) => (p.id || p._id) === targetId)
-      if (exists) {
-        return prev.map((p) => ((p.id || p._id) === targetId ? savedProject : p))
-      }
-      return [savedProject, ...prev]
-    })
   }
 
   const handleDeleteSuccess = (deletedId: string) => {
@@ -73,58 +62,61 @@ export default function ProjectsPage() {
   const handleUpdateSuccess = (updatedProject: Project) => {
     setProjects((prev) => {
       const targetId = updatedProject.id || updatedProject._id
-      return prev.map((p) =>
-        (p.id || p._id) === targetId ? updatedProject : p
-      )
+      return prev.map((p) => ((p.id || p._id) === targetId ? updatedProject : p))
     })
   }
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader />
-        <div className="flex flex-1 flex-col p-4 lg:p-6 gap-6 max-w-7xl">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Software Projects</h2>
-            <p className="text-sm text-muted-foreground">
-              Manage portfolio projects, tech stacks, GitHub repos, core highlights, and live demo URLs.
-            </p>
-          </div>
+    <div className="flex flex-1 min-w-0 flex-col w-full">
+      <PageSubHeader
+        backHref="/dashboard"
+        backLabel="Overview"
+        description="Manage portfolio projects, tech stacks, GitHub repos, core highlights, and live demo URLs."
+      />
 
-          <ProjectsTable
-            projects={projects}
-            loading={loading}
-            onAdd={handleOpenAdd}
-            onEdit={handleOpenEdit}
-            onDelete={handleOpenDelete}
-            onUpdateSuccess={handleUpdateSuccess}
-          />
+      <div className="flex-1 min-w-0 p-4 lg:p-6">
+        <ProjectsTable
+          projects={projects}
+          loading={loading}
+          showAddButton={false}
+          onAdd={handleOpenAdd}
+          onEdit={handleOpenEdit}
+          onDelete={handleOpenDelete}
+          onUpdateSuccess={handleUpdateSuccess}
+        />
+      </div>
 
-          {/* Form Modal (Create / Edit) */}
-          <ProjectFormDialog
-            open={isFormOpen}
-            onOpenChange={setIsFormOpen}
-            project={selectedProject}
-            onSuccess={handleFormSuccess}
-          />
+      <StickyActionFooter
+        left={
+          <>
+            <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1.5">
+              <Link href="/dashboard/projects/categories">
+                <IconCategory className="size-3.5" />
+                Categories
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1.5">
+              <Link href="/dashboard/projects/tags">
+                <IconTags className="size-3.5" />
+                Tags & Stack
+              </Link>
+            </Button>
+          </>
+        }
+        right={
+          <Button size="sm" onClick={handleOpenAdd} className="h-8 text-xs gap-1.5 font-medium">
+            <IconPlus className="size-3.5" />
+            Add Project
+          </Button>
+        }
+      />
 
-          {/* Delete Confirmation Modal */}
-          <ProjectDeleteDialog
-            open={isDeleteOpen}
-            onOpenChange={setIsDeleteOpen}
-            project={deletingProject}
-            onSuccess={handleDeleteSuccess}
-          />
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+      <ProjectDeleteDialog
+        open={isDeleteOpen}
+        onOpenChange={setIsDeleteOpen}
+        project={deletingProject}
+        onSuccess={handleDeleteSuccess}
+      />
+    </div>
   )
 }

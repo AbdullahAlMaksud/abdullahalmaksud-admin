@@ -48,6 +48,10 @@ export async function getBooks(params?: {
   };
 }
 
+export async function getBookById(id: string): Promise<ApiResponse<Book>> {
+  return apiClient.get<ApiResponse<Book>>(`/api/v1/books/id/${id}`);
+}
+
 export async function getBookBundle(): Promise<ApiResponse<BookBundle>> {
   return apiClient.get<ApiResponse<BookBundle>>("/api/v1/books");
 }

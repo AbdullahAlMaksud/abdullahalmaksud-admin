@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Blog } from "@/lib/api/types";
 import { createBlog, updateBlog } from "@/lib/api/blogs";
-import { LexicalBlockEditor } from "@/components/editor/lexical-editor";
-import { BlockInspectorDialog } from "@/components/editor/block-inspector-dialog";
+import {
+  DocumentWorkspaceShell,
+  MetadataSection,
+} from "@/components/editor/document-workspace";
 import type {
   BlogBlock,
   SerializedEditorContent,
@@ -15,8 +17,6 @@ import { ImageUpload } from "@/components/ui/image-upload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
@@ -26,17 +26,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  IconArrowLeft,
   IconDeviceFloppy,
   IconLoader2,
-  IconBraces,
   IconPhoto,
   IconTags,
   IconWorld,
   IconClock,
   IconSend,
   IconX,
-  IconSparkles,
+  IconLink,
+  IconFileText,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 
@@ -91,7 +90,7 @@ export function BlogEditorForm({
   const [tagInput, setTagInput] = useState("");
 
   // Publish & Featured
-  const [isPublished, setIsPublished] = useState(
+  const [isPublished] = useState(
     !!(initialBlog?.isPublished ?? initialBlog?.published ?? false)
   );
   const [featured, setFeatured] = useState(!!initialBlog?.featured);
@@ -118,7 +117,6 @@ export function BlogEditorForm({
 
   // UI States
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isInspectorOpen, setIsInspectorOpen] = useState(false);
 
   // Auto-slugify
   const slugify = (text: string) => {
@@ -256,180 +254,80 @@ export function BlogEditorForm({
   };
 
   return (
-    <div className="flex flex-col gap-6 max-w-7xl mx-auto pb-16">
-      {/* Sticky Top Action Header */}
-      <div className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 py-3 px-4 -mx-4 sm:mx-0 sm:px-6 bg-background/80 backdrop-blur-md border-b border-border/80 rounded-xl">
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard/blogs">
-            <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground">
-              <IconArrowLeft className="size-4" />
-              <span>All Articles</span>
-            </Button>
-          </Link>
-          <div className="h-4 w-px bg-border" />
-          <Badge
-            variant={isPublished ? "default" : "outline"}
-            className={`text-xs font-medium ${
-              isPublished
-                ? "bg-emerald-500/15 text-emerald-500 border-emerald-500/30"
-                : "bg-amber-500/10 text-amber-500 border-amber-500/30"
-            }`}
+    <DocumentWorkspaceShell
+      backHref="/dashboard/blogs"
+      backLabel="Back to Articles"
+      description={
+        isEditing
+          ? "Update article content blocks, SEO metadata, categories, tags, and publishing status."
+          : "Write and publish rich technical articles using the Notion-style block editor."
+      }
+      isPublished={isPublished}
+      metaButtonLabel="Blog Metadata"
+      metaPanelTitle="Blog Metadata & Settings"
+      title={title}
+      onTitleChange={handleTitleChange}
+      titlePlaceholder="Enter a captivating article title..."
+      initialContent={initialBlog?.content}
+      onEditorChange={handleEditorChange}
+      assetModule="blog"
+      folderKey={slug || "draft"}
+      blocks={blocks}
+      metadataPanel={
+        <>
+          <MetadataSection
+            title="Slug & URL"
+            icon={<IconLink className="size-3.5 text-primary" />}
           >
-            {isPublished ? "● Live / Published" : "Draft Mode"}
-          </Badge>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Live Block Inspector Button */}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setIsInspectorOpen(true)}
-            className="h-8 gap-1.5 text-xs font-mono text-muted-foreground hover:text-foreground"
-          >
-            <IconBraces className="size-4 text-primary" />
-            <span className="hidden sm:inline">Inspect Blocks ({blocks.length})</span>
-          </Button>
-
-          {/* Save Draft */}
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            disabled={isSubmitting}
-            onClick={() => handleSave(false)}
-            className="h-8 gap-1.5 text-xs"
-          >
-            {isSubmitting ? (
-              <IconLoader2 className="size-3.5 animate-spin" />
-            ) : (
-              <IconDeviceFloppy className="size-3.5" />
-            )}
-            <span>Save Draft</span>
-          </Button>
-
-          {/* Publish / Update */}
-          <Button
-            type="button"
-            size="sm"
-            disabled={isSubmitting}
-            onClick={() => handleSave(true)}
-            className="h-8 gap-1.5 text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            {isSubmitting ? (
-              <IconLoader2 className="size-3.5 animate-spin" />
-            ) : (
-              <IconSend className="size-3.5" />
-            )}
-            <span>{isEditing ? "Update & Publish" : "Publish Article"}</span>
-          </Button>
-        </div>
-      </div>
-
-      {/* Editor Body: Two-Column Responsive Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left / Main Column: Title & Lexical Editor */}
-        <div className="lg:col-span-8 space-y-6">
-          {/* Title & Slug Header Card */}
-          <div className="bg-card border border-border rounded-xl p-5 sm:p-6 space-y-4 shadow-xs">
-            <div className="space-y-1.5">
-              <Label htmlFor="title" className="text-xs font-medium text-muted-foreground">
-                Article Title
-              </Label>
-              <Input
-                id="title"
-                placeholder="Enter a captivating article title..."
-                value={title}
-                onChange={handleTitleChange}
-                className="text-lg sm:text-xl font-bold h-12 border-border/80 focus-visible:ring-primary/20"
-              />
-            </div>
-
-            {/* Slug */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 pt-1 text-xs">
-              <span className="text-muted-foreground font-mono">Slug: /blog/</span>
+            <div className="flex items-center gap-1.5 text-xs">
+              <span className="text-muted-foreground font-mono shrink-0">/blog/</span>
               <Input
                 value={slug}
                 onChange={handleSlugChange}
                 placeholder="article-slug"
-                className="font-mono text-xs h-8 flex-1 border-dashed"
+                className="font-mono text-xs h-8 flex-1 bg-background"
               />
             </div>
-          </div>
+          </MetadataSection>
 
-          {/* Lexical Block Editor */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between px-1">
-              <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                <IconSparkles className="size-3.5 text-primary" />
-                <span>Rich Block Content</span>
-              </Label>
-              <span className="text-[11px] text-muted-foreground font-mono">
-                Lexical Block Engine
-              </span>
-            </div>
-
-            <LexicalBlockEditor
-              initialContent={initialBlog?.content}
-              onChange={handleEditorChange}
-              onOpenBlockInspector={() => setIsInspectorOpen(true)}
-            />
-          </div>
-
-          {/* Excerpt */}
-          <div className="bg-card border border-border rounded-xl p-5 space-y-2 shadow-xs">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="excerpt" className="text-xs font-medium text-foreground">
-                Article Excerpt / Summary
-              </Label>
+          <MetadataSection
+            title="Excerpt / Summary"
+            icon={<IconFileText className="size-3.5 text-primary" />}
+            right={
               <span className="text-[11px] text-muted-foreground font-mono">
                 {excerpt.length} chars
               </span>
-            </div>
+            }
+          >
             <textarea
               id="excerpt"
               rows={3}
               value={excerpt}
               onChange={(e) => setExcerpt(e.target.value)}
               placeholder="Provide a concise 1-2 sentence overview of the article for cards and SEO previews..."
-              className="w-full text-xs sm:text-sm bg-muted/30 border border-border rounded-lg p-3 outline-hidden focus:border-primary focus:ring-1 focus:ring-primary/20 leading-relaxed resize-y"
+              className="w-full text-xs bg-background border border-border rounded-md p-2.5 outline-hidden focus:border-primary focus:ring-1 focus:ring-primary/20 leading-relaxed resize-y"
             />
-          </div>
-        </div>
+          </MetadataSection>
 
-        {/* Right Column: Metadata & Settings Sidebar */}
-        <div className="lg:col-span-4 space-y-6">
-          {/* Card: Cover Image */}
-          <Card className="border-border shadow-xs">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
-                <IconPhoto className="size-4 text-primary" />
-                <span>Cover Image</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ImageUpload
-                value={coverImage}
-                onChange={setCoverImage}
-                label="Cover Image"
-                placeholder="Upload or paste image URL"
-                module="blog"
-                folderKey={slug || "draft"}
-              />
-            </CardContent>
-          </Card>
+          <MetadataSection
+            title="Cover Image"
+            icon={<IconPhoto className="size-3.5 text-primary" />}
+          >
+            <ImageUpload
+              value={coverImage}
+              onChange={setCoverImage}
+              label="Cover Image"
+              placeholder="Upload or paste image URL"
+              module="blog"
+              folderKey={slug || "draft"}
+            />
+          </MetadataSection>
 
-          {/* Card: Taxonomy & Category */}
-          <Card className="border-border shadow-xs">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
-                <IconTags className="size-4 text-primary" />
-                <span>Category & Tags</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Category */}
+          <MetadataSection
+            title="Category & Tags"
+            icon={<IconTags className="size-3.5 text-primary" />}
+          >
+            <div className="space-y-3.5">
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-muted-foreground">
                   Category
@@ -445,7 +343,7 @@ export function BlogEditorForm({
                       }
                     }}
                   >
-                    <SelectTrigger className="h-9 text-xs">
+                    <SelectTrigger className="h-8 text-xs w-full bg-background">
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -465,7 +363,7 @@ export function BlogEditorForm({
                       placeholder="e.g. Cloud Infrastructure"
                       value={customCategory}
                       onChange={(e) => setCustomCategory(e.target.value)}
-                      className="h-9 text-xs"
+                      className="h-8 text-xs bg-background"
                       autoFocus
                     />
                     <Button
@@ -473,7 +371,7 @@ export function BlogEditorForm({
                       variant="ghost"
                       size="sm"
                       onClick={() => setIsCustomCategory(false)}
-                      className="h-9 px-2 text-xs text-muted-foreground"
+                      className="h-8 px-2 text-xs text-muted-foreground"
                     >
                       Cancel
                     </Button>
@@ -481,12 +379,11 @@ export function BlogEditorForm({
                 )}
               </div>
 
-              {/* Tags Manager */}
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-muted-foreground">
                   Tags ({tags.length})
                 </Label>
-                <div className="flex flex-wrap gap-1.5 p-2 bg-muted/30 border border-border rounded-lg min-h-[42px] items-center">
+                <div className="flex flex-wrap gap-1.5 p-2 bg-background border border-border rounded-md min-h-[38px] items-center">
                   {tags.map((tag) => (
                     <span
                       key={tag}
@@ -509,7 +406,7 @@ export function BlogEditorForm({
                       value={tagInput}
                       onChange={(e) => setTagInput(e.target.value)}
                       onKeyDown={handleTagKeyDown}
-                      className="w-full bg-transparent border-none text-xs outline-hidden p-1 text-foreground placeholder:text-muted-foreground/60"
+                      className="w-full bg-transparent border-none text-xs outline-hidden p-0.5 text-foreground placeholder:text-muted-foreground/60"
                     />
                   </div>
                 </div>
@@ -517,19 +414,14 @@ export function BlogEditorForm({
                   Press Enter or comma to add a tag.
                 </p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </MetadataSection>
 
-          {/* Card: Reading Time & Featured */}
-          <Card className="border-border shadow-xs">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
-                <IconClock className="size-4 text-primary" />
-                <span>Display & Visibility</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Reading Time */}
+          <MetadataSection
+            title="Display & Visibility"
+            icon={<IconClock className="size-3.5 text-primary" />}
+          >
+            <div className="space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="readingTime" className="text-xs font-medium text-muted-foreground">
                   Estimated Reading Time
@@ -539,12 +431,11 @@ export function BlogEditorForm({
                   value={readingTime}
                   onChange={(e) => setReadingTime(e.target.value)}
                   placeholder="e.g. 5 min read"
-                  className="h-8 text-xs font-mono"
+                  className="h-8 text-xs font-mono bg-background"
                 />
               </div>
 
-              {/* Featured toggle */}
-              <div className="space-y-3 pt-2 border-t border-border/80">
+              <div className="space-y-2.5 pt-1">
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="featured"
@@ -566,9 +457,11 @@ export function BlogEditorForm({
                     </Label>
                     <Select
                       value={featuredType}
-                      onValueChange={(val: any) => setFeaturedType(val)}
+                      onValueChange={(val: "large" | "small" | "standard") =>
+                        setFeaturedType(val)
+                      }
                     >
-                      <SelectTrigger className="h-8 text-xs">
+                      <SelectTrigger className="h-8 text-xs bg-background">
                         <SelectValue placeholder="Placement type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -586,18 +479,14 @@ export function BlogEditorForm({
                   </div>
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </MetadataSection>
 
-          {/* Card: SEO Settings */}
-          <Card className="border-border shadow-xs">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
-                <IconWorld className="size-4 text-primary" />
-                <span>SEO & Social</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-xs">
+          <MetadataSection
+            title="SEO & Social"
+            icon={<IconWorld className="size-3.5 text-primary" />}
+          >
+            <div className="space-y-2.5 text-xs">
               <div className="space-y-1">
                 <Label htmlFor="metaTitle" className="text-xs text-muted-foreground">
                   Meta Title
@@ -607,7 +496,7 @@ export function BlogEditorForm({
                   value={metaTitle}
                   onChange={(e) => setMetaTitle(e.target.value)}
                   placeholder={title || "SEO Title..."}
-                  className="h-8 text-xs"
+                  className="h-8 text-xs bg-background"
                 />
               </div>
 
@@ -621,20 +510,55 @@ export function BlogEditorForm({
                   value={metaDescription}
                   onChange={(e) => setMetaDescription(e.target.value)}
                   placeholder={excerpt || "Search snippet..."}
-                  className="w-full text-xs bg-muted/30 border border-border rounded-lg p-2 outline-hidden focus:border-primary focus:ring-1 focus:ring-primary/20 leading-relaxed resize-y"
+                  className="w-full text-xs bg-background border border-border rounded-md p-2 outline-hidden focus:border-primary focus:ring-1 focus:ring-primary/20 leading-relaxed resize-y"
                 />
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Block Inspector Modal */}
-      <BlockInspectorDialog
-        open={isInspectorOpen}
-        onOpenChange={setIsInspectorOpen}
-        blocks={blocks}
-      />
-    </div>
+            </div>
+          </MetadataSection>
+        </>
+      }
+      footerActions={
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            asChild
+            className="h-8 text-xs"
+          >
+            <Link href="/dashboard/blogs">Cancel</Link>
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            disabled={isSubmitting}
+            onClick={() => handleSave(false)}
+            className="h-8 gap-1.5 text-xs"
+          >
+            {isSubmitting ? (
+              <IconLoader2 className="size-3.5 animate-spin" />
+            ) : (
+              <IconDeviceFloppy className="size-3.5" />
+            )}
+            <span>Save Draft</span>
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            disabled={isSubmitting}
+            onClick={() => handleSave(true)}
+            className="h-8 gap-1.5 text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            {isSubmitting ? (
+              <IconLoader2 className="size-3.5 animate-spin" />
+            ) : (
+              <IconSend className="size-3.5" />
+            )}
+            <span>{isEditing ? "Update & Publish" : "Publish Article"}</span>
+          </Button>
+        </>
+      }
+    />
   );
 }

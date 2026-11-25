@@ -1,8 +1,9 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { Blog } from "@/lib/api/types"
 import { updateBlog } from "@/lib/api/blogs"
+import { resolveAssetUrl } from "@/lib/asset-url"
 import {
   Table,
   TableBody,
@@ -33,6 +34,8 @@ import { toast } from "sonner"
 interface BlogsTableProps {
   blogs: Blog[]
   loading?: boolean
+  showAddButton?: boolean
+  initialStatusFilter?: string
   onEdit: (blog: Blog) => void
   onDelete: (blog: Blog) => void
   onAdd: () => void
@@ -42,13 +45,19 @@ interface BlogsTableProps {
 export function BlogsTable({
   blogs,
   loading = false,
+  showAddButton = true,
+  initialStatusFilter = "all",
   onEdit,
   onDelete,
   onAdd,
   onUpdateSuccess,
 }: BlogsTableProps) {
   const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
+  const [statusFilter, setStatusFilter] = useState(initialStatusFilter)
+
+  useEffect(() => {
+    setStatusFilter(initialStatusFilter || "all")
+  }, [initialStatusFilter])
 
   const filteredBlogs = blogs.filter((blog) => {
     const query = searchQuery.toLowerCase()
@@ -90,11 +99,11 @@ export function BlogsTable({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 min-w-0 w-full">
       {/* Controls */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-card p-4 rounded-xl border">
-        <div className="flex flex-1 items-center gap-2.5 w-full sm:w-auto">
-          <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-between gap-3 bg-card p-4 rounded-xl border">
+        <div className="flex flex-wrap sm:flex-nowrap flex-1 items-center gap-2.5 min-w-0">
+          <div className="relative flex-1 min-w-[160px] max-w-sm">
             <IconSearch className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
             <Input
               placeholder="Search articles by title, tags, category..."
@@ -105,7 +114,7 @@ export function BlogsTable({
           </div>
 
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[140px] h-9 text-xs">
+            <SelectTrigger className="w-full sm:w-[140px] shrink-0 h-9 text-xs">
               <SelectValue placeholder="All Status" />
             </SelectTrigger>
             <SelectContent>
@@ -116,22 +125,24 @@ export function BlogsTable({
           </Select>
         </div>
 
-        <Button onClick={onAdd} size="sm" className="gap-1.5 h-9 text-xs w-full sm:w-auto font-medium">
-          <IconPlus className="size-4" /> New Article
-        </Button>
+        {showAddButton && (
+          <Button onClick={onAdd} size="sm" className="gap-1.5 h-9 text-xs w-full sm:w-auto shrink-0 font-medium">
+            <IconPlus className="size-4" /> New Article
+          </Button>
+        )}
       </div>
 
       {/* Table */}
       <div className="rounded-xl border bg-card overflow-hidden shadow-xs">
-        <Table>
+        <Table className="table-fixed w-full">
           <TableHeader className="bg-muted/40">
             <TableRow>
-              <TableHead className="min-w-[260px]">Article</TableHead>
-              <TableHead className="hidden md:table-cell">Category</TableHead>
-              <TableHead className="hidden lg:table-cell">Tags</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="hidden sm:table-cell">Date</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Article</TableHead>
+              <TableHead className="hidden lg:table-cell w-32">Category</TableHead>
+              <TableHead className="hidden xl:table-cell w-44">Tags</TableHead>
+              <TableHead className="w-28">Status</TableHead>
+              <TableHead className="hidden lg:table-cell w-28">Date</TableHead>
+              <TableHead className="w-20 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -162,12 +173,12 @@ export function BlogsTable({
                 <TableRow key={blog.id} className="hover:bg-muted/30 transition-colors">
                   {/* Article Title & Cover */}
                   <TableCell>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       {blog.coverImage && (
                         <div className="size-10 rounded-lg bg-muted border overflow-hidden shrink-0">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={blog.coverImage}
+                            src={resolveAssetUrl(blog.coverImage)}
                             alt=""
                             className="size-full object-cover"
                             onError={(e) => {
@@ -176,7 +187,7 @@ export function BlogsTable({
                           />
                         </div>
                       )}
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <span className="font-semibold text-sm text-foreground truncate block">
                           {blog.title}
                         </span>
@@ -188,15 +199,15 @@ export function BlogsTable({
                   </TableCell>
 
                   {/* Category */}
-                  <TableCell className="hidden md:table-cell">
-                    <span className="text-xs font-medium text-muted-foreground">
+                  <TableCell className="hidden lg:table-cell">
+                    <span className="text-xs font-medium text-muted-foreground truncate block">
                       {blog.category || "General"}
                     </span>
                   </TableCell>
 
                   {/* Tags */}
-                  <TableCell className="hidden lg:table-cell">
-                    <div className="flex flex-wrap gap-1 max-w-[200px]">
+                  <TableCell className="hidden xl:table-cell">
+                    <div className="flex flex-wrap gap-1">
                       {blog.tags?.slice(0, 2).map((tag, i) => (
                         <span
                           key={i}
@@ -234,7 +245,7 @@ export function BlogsTable({
                   </TableCell>
 
                   {/* Date */}
-                  <TableCell className="hidden sm:table-cell text-xs text-muted-foreground font-mono">
+                  <TableCell className="hidden lg:table-cell text-xs text-muted-foreground font-mono">
                     {blog.publishedAt || blog.createdAt?.split("T")[0] || "—"}
                   </TableCell>
 

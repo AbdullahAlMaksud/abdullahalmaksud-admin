@@ -28,6 +28,10 @@ export async function getProjectBySlug(slug: string): Promise<Project> {
   return apiClient.get<Project>(`/api/v1/projects/${slug}`);
 }
 
+export async function getProjectById(id: string): Promise<ApiResponse<Project>> {
+  return apiClient.get<ApiResponse<Project>>(`/api/v1/projects/id/${id}`);
+}
+
 export async function createProject(
   data: Omit<Project, "id" | "createdAt" | "lastUpdate" | "updatedAt">
 ): Promise<ApiResponse<Project>> {

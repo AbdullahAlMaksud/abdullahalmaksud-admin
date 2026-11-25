@@ -1,23 +1,21 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from "react"
-import { AppSidebar } from "@/components/dashboard-01/components/app-sidebar"
-import { SiteHeader } from "@/components/dashboard-01/components/site-header"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Design } from "@/lib/api/types"
 import { getDesigns } from "@/lib/api/designs"
 import { DesignsTable } from "@/components/modules/designs/designs-table"
-import { DesignFormDialog } from "@/components/modules/designs/design-form-dialog"
 import { DesignDeleteDialog } from "@/components/modules/designs/design-delete-dialog"
+import { PageSubHeader, StickyActionFooter } from "@/components/dashboard-01/components/sticky-action-bar"
+import { Button } from "@/components/ui/button"
+import { IconCategory, IconPlus } from "@tabler/icons-react"
 import { toast } from "sonner"
 
 export default function DesignsPage() {
+  const router = useRouter()
   const [designs, setDesigns] = useState<Design[]>([])
   const [loading, setLoading] = useState(true)
-
-  // Dialog states
-  const [isFormOpen, setIsFormOpen] = useState(false)
-  const [selectedDesign, setSelectedDesign] = useState<Design | null>(null)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [deletingDesign, setDeletingDesign] = useState<Design | null>(null)
 
@@ -41,31 +39,19 @@ export default function DesignsPage() {
   }, [loadDesigns])
 
   const handleOpenAdd = () => {
-    setSelectedDesign(null)
-    setIsFormOpen(true)
+    router.push("/dashboard/designs/create")
   }
 
   const handleOpenEdit = (design: Design) => {
-    setSelectedDesign(design)
-    setIsFormOpen(true)
+    const targetId = design.id || design._id
+    if (targetId) {
+      router.push(`/dashboard/designs/${targetId}/edit`)
+    }
   }
 
   const handleOpenDelete = (design: Design) => {
     setDeletingDesign(design)
     setIsDeleteOpen(true)
-  }
-
-  const handleFormSuccess = (savedDesign: Design) => {
-    setDesigns((prev) => {
-      const targetId = savedDesign.id || savedDesign._id
-      const exists = prev.some((d) => (d.id || d._id) === targetId)
-      if (exists) {
-        return prev.map((d) =>
-          (d.id || d._id) === targetId ? savedDesign : d
-        )
-      }
-      return [savedDesign, ...prev]
-    })
   }
 
   const handleDeleteSuccess = (deletedId: string) => {
@@ -75,58 +61,53 @@ export default function DesignsPage() {
   const handleUpdateSuccess = (updatedDesign: Design) => {
     setDesigns((prev) => {
       const targetId = updatedDesign.id || updatedDesign._id
-      return prev.map((d) =>
-        (d.id || d._id) === targetId ? updatedDesign : d
-      )
+      return prev.map((d) => ((d.id || d._id) === targetId ? updatedDesign : d))
     })
   }
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader />
-        <div className="flex flex-1 flex-col p-4 lg:p-6 gap-6 max-w-7xl">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Graphic Designs</h2>
-            <p className="text-sm text-muted-foreground">
-              Manage branding showcases, UI/UX aesthetics, posters, packaging, and visual assets.
-            </p>
-          </div>
+    <div className="flex flex-1 min-w-0 flex-col w-full">
+      <PageSubHeader
+        backHref="/dashboard"
+        backLabel="Overview"
+        description="Manage branding showcases, UI/UX aesthetics, posters, packaging, and visual assets."
+      />
 
-          <DesignsTable
-            designs={designs}
-            loading={loading}
-            onAdd={handleOpenAdd}
-            onEdit={handleOpenEdit}
-            onDelete={handleOpenDelete}
-            onUpdateSuccess={handleUpdateSuccess}
-          />
+      <div className="flex-1 min-w-0 p-4 lg:p-6">
+        <DesignsTable
+          designs={designs}
+          loading={loading}
+          showAddButton={false}
+          onAdd={handleOpenAdd}
+          onEdit={handleOpenEdit}
+          onDelete={handleOpenDelete}
+          onUpdateSuccess={handleUpdateSuccess}
+        />
+      </div>
 
-          {/* Form Modal (Create / Edit) */}
-          <DesignFormDialog
-            open={isFormOpen}
-            onOpenChange={setIsFormOpen}
-            design={selectedDesign}
-            onSuccess={handleFormSuccess}
-          />
+      <StickyActionFooter
+        left={
+          <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1.5">
+            <Link href="/dashboard/designs/categories">
+              <IconCategory className="size-3.5" />
+              Categories & Tools
+            </Link>
+          </Button>
+        }
+        right={
+          <Button size="sm" onClick={handleOpenAdd} className="h-8 text-xs gap-1.5 font-medium">
+            <IconPlus className="size-3.5" />
+            Add Design
+          </Button>
+        }
+      />
 
-          {/* Delete Confirmation Modal */}
-          <DesignDeleteDialog
-            open={isDeleteOpen}
-            onOpenChange={setIsDeleteOpen}
-            design={deletingDesign}
-            onSuccess={handleDeleteSuccess}
-          />
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+      <DesignDeleteDialog
+        open={isDeleteOpen}
+        onOpenChange={setIsDeleteOpen}
+        design={deletingDesign}
+        onSuccess={handleDeleteSuccess}
+      />
+    </div>
   )
 }

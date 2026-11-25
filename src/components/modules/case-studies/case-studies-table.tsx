@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { CaseStudy } from "@/lib/api/types"
 import { updateCaseStudy } from "@/lib/api/case-studies"
@@ -35,6 +35,8 @@ import { toast } from "sonner"
 interface CaseStudiesTableProps {
   caseStudies: CaseStudy[]
   loading?: boolean
+  showAddButton?: boolean
+  initialStatusFilter?: string
   onEdit: (item: CaseStudy) => void
   onDelete: (item: CaseStudy) => void
   onAdd: () => void
@@ -44,6 +46,8 @@ interface CaseStudiesTableProps {
 export function CaseStudiesTable({
   caseStudies,
   loading = false,
+  showAddButton = true,
+  initialStatusFilter = "all",
   onEdit,
   onDelete,
   onAdd,
@@ -51,7 +55,11 @@ export function CaseStudiesTable({
 }: CaseStudiesTableProps) {
   const { t } = useTranslation()
   const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
+  const [statusFilter, setStatusFilter] = useState(initialStatusFilter)
+
+  useEffect(() => {
+    setStatusFilter(initialStatusFilter || "all")
+  }, [initialStatusFilter])
 
   const filteredItems = caseStudies.filter((item) => {
     const query = searchQuery.toLowerCase()
@@ -108,22 +116,22 @@ export function CaseStudiesTable({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 min-w-0 w-full">
       {/* Controls: Search, Filter, Add */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="flex flex-1 items-center gap-2 max-w-md">
-          <div className="relative w-full">
-            <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+      <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-between gap-3 bg-card p-4 rounded-xl border">
+        <div className="flex flex-wrap sm:flex-nowrap flex-1 items-center gap-2.5 min-w-0">
+          <div className="relative flex-1 min-w-[160px] max-w-sm">
+            <IconSearch className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
             <Input
               placeholder={t("caseStudies.searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-9"
+              className="pl-9 h-9 text-xs"
             />
           </div>
 
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[140px] h-9">
+            <SelectTrigger className="w-full sm:w-[140px] shrink-0 h-9 text-xs">
               <SelectValue placeholder={t("common.filter")} />
             </SelectTrigger>
             <SelectContent>
@@ -134,24 +142,26 @@ export function CaseStudiesTable({
           </Select>
         </div>
 
-        <Button onClick={onAdd} size="sm" className="h-9 gap-1.5 shrink-0">
-          <IconPlus className="size-4" />
-          <span>{t("caseStudies.addNew")}</span>
-        </Button>
+        {showAddButton && (
+          <Button onClick={onAdd} size="sm" className="h-9 text-xs gap-1.5 w-full sm:w-auto shrink-0 font-medium">
+            <IconPlus className="size-4" />
+            <span>{t("caseStudies.addNew")}</span>
+          </Button>
+        )}
       </div>
 
       {/* Table Container */}
-      <div className="rounded-lg border bg-card overflow-hidden shadow-xs">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50 hover:bg-muted/50">
-              <TableHead className="w-[40px]"></TableHead>
+      <div className="rounded-xl border bg-card overflow-hidden shadow-xs">
+        <Table className="table-fixed w-full">
+          <TableHeader className="bg-muted/40">
+            <TableRow>
+              <TableHead className="w-10"></TableHead>
               <TableHead>{t("caseStudies.tableTitle")}</TableHead>
-              <TableHead className="hidden md:table-cell">{t("caseStudies.tableCategory")}</TableHead>
-              <TableHead className="hidden lg:table-cell">{t("caseStudies.tableIndustry")}</TableHead>
-              <TableHead className="hidden sm:table-cell">{t("caseStudies.tableClient")}</TableHead>
-              <TableHead>{t("caseStudies.tableStatus")}</TableHead>
-              <TableHead className="text-right">{t("caseStudies.tableActions")}</TableHead>
+              <TableHead className="hidden lg:table-cell w-36">{t("caseStudies.tableCategory")}</TableHead>
+              <TableHead className="hidden xl:table-cell w-36">{t("caseStudies.tableIndustry")}</TableHead>
+              <TableHead className="hidden lg:table-cell w-32">{t("caseStudies.tableClient")}</TableHead>
+              <TableHead className="w-28">{t("caseStudies.tableStatus")}</TableHead>
+              <TableHead className="w-20 text-right">{t("caseStudies.tableActions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -198,30 +208,30 @@ export function CaseStudiesTable({
 
                     {/* Title & Slug */}
                     <TableCell className="font-medium">
-                      <div className="flex flex-col gap-0.5 max-w-[280px] lg:max-w-[340px]">
+                      <div className="flex flex-col gap-0.5 min-w-0">
                         <span className="truncate font-semibold text-foreground text-sm">
                           {item.title}
                         </span>
-                        <span className="truncate text-xs text-muted-foreground">
+                        <span className="truncate text-xs text-muted-foreground font-mono">
                           /{item.slug}
                         </span>
                       </div>
                     </TableCell>
 
                     {/* Category */}
-                    <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
-                      <Badge variant="outline" className="text-[11px] font-normal">
+                    <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
+                      <Badge variant="outline" className="text-[11px] font-normal max-w-full truncate">
                         {item.category || "Architecture"}
                       </Badge>
                     </TableCell>
 
                     {/* Industry */}
-                    <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
+                    <TableCell className="hidden xl:table-cell text-xs text-muted-foreground truncate">
                       {item.industry || "—"}
                     </TableCell>
 
                     {/* Client / Organization */}
-                    <TableCell className="hidden sm:table-cell text-xs text-muted-foreground">
+                    <TableCell className="hidden lg:table-cell text-xs text-muted-foreground truncate">
                       {item.client || "—"}
                     </TableCell>
 

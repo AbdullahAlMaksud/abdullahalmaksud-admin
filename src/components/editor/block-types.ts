@@ -5,7 +5,8 @@ export type BlockType =
   | "code"
   | "list"
   | "divider"
-  | "image";
+  | "image"
+  | "table";
 
 export interface BlogBlock {
   id: string;
@@ -20,6 +21,8 @@ export interface BlogBlock {
     url?: string;
     caption?: string;
     alt?: string;
+    headers?: string[];
+    rows?: string[][];
     markdown?: string;
   };
 }

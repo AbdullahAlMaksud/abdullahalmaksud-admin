@@ -1,8 +1,9 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { Project } from "@/lib/api/types"
 import { updateProject } from "@/lib/api/projects"
+import { resolveAssetUrl } from "@/lib/asset-url"
 import {
   Table,
   TableBody,
@@ -36,6 +37,8 @@ import { toast } from "sonner"
 interface ProjectsTableProps {
   projects: Project[]
   loading?: boolean
+  showAddButton?: boolean
+  initialStatusFilter?: string
   onEdit: (project: Project) => void
   onDelete: (project: Project) => void
   onAdd: () => void
@@ -45,13 +48,19 @@ interface ProjectsTableProps {
 export function ProjectsTable({
   projects,
   loading = false,
+  showAddButton = true,
+  initialStatusFilter = "all",
   onEdit,
   onDelete,
   onAdd,
   onUpdateSuccess,
 }: ProjectsTableProps) {
   const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
+  const [statusFilter, setStatusFilter] = useState(initialStatusFilter)
+
+  useEffect(() => {
+    setStatusFilter(initialStatusFilter || "all")
+  }, [initialStatusFilter])
 
   const filteredProjects = projects.filter((project) => {
     const query = searchQuery.toLowerCase()
@@ -117,11 +126,11 @@ export function ProjectsTable({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 min-w-0 w-full">
       {/* Controls */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-card p-4 rounded-xl border">
-        <div className="flex flex-1 items-center gap-2.5 w-full sm:w-auto">
-          <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-between gap-3 bg-card p-4 rounded-xl border">
+        <div className="flex flex-wrap sm:flex-nowrap flex-1 items-center gap-2.5 min-w-0">
+          <div className="relative flex-1 min-w-[160px] max-w-sm">
             <IconSearch className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
             <Input
               placeholder="Search projects by title, stack, slug..."
@@ -132,7 +141,7 @@ export function ProjectsTable({
           </div>
 
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[140px] h-9 text-xs">
+            <SelectTrigger className="w-full sm:w-[140px] shrink-0 h-9 text-xs">
               <SelectValue placeholder="All Status" />
             </SelectTrigger>
             <SelectContent>
@@ -145,22 +154,24 @@ export function ProjectsTable({
           </Select>
         </div>
 
-        <Button onClick={onAdd} size="sm" className="gap-1.5 h-9 text-xs w-full sm:w-auto font-medium">
-          <IconPlus className="size-4" /> Add Project
-        </Button>
+        {showAddButton && (
+          <Button onClick={onAdd} size="sm" className="gap-1.5 h-9 text-xs w-full sm:w-auto shrink-0 font-medium">
+            <IconPlus className="size-4" /> Add Project
+          </Button>
+        )}
       </div>
 
       {/* Table */}
       <div className="rounded-xl border bg-card overflow-hidden shadow-xs">
-        <Table>
+        <Table className="table-fixed w-full">
           <TableHeader className="bg-muted/40">
             <TableRow>
-              <TableHead className="w-[40px]"></TableHead>
-              <TableHead className="min-w-[220px]">Project</TableHead>
-              <TableHead className="hidden md:table-cell">Stack</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="hidden lg:table-cell">Links</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="w-10"></TableHead>
+              <TableHead>Project</TableHead>
+              <TableHead className="hidden lg:table-cell w-48">Stack</TableHead>
+              <TableHead className="w-28">Status</TableHead>
+              <TableHead className="hidden xl:table-cell w-24">Links</TableHead>
+              <TableHead className="w-20 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -207,12 +218,12 @@ export function ProjectsTable({
 
                   {/* Title & info */}
                   <TableCell>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       {(project.coverImage || project.logo) && (
                         <div className="size-10 rounded-lg bg-muted border overflow-hidden shrink-0">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={project.logo || project.coverImage}
+                            src={resolveAssetUrl(project.logo || project.coverImage)}
                             alt=""
                             className="size-full object-cover"
                             onError={(e) => {
@@ -221,13 +232,13 @@ export function ProjectsTable({
                           />
                         </div>
                       )}
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 min-w-0">
                           <span className="font-semibold text-sm text-foreground truncate">
                             {project.title}
                           </span>
                           {project.isFeatured && (
-                            <Badge variant="outline" className="text-[10px] h-4.5 px-1.5 bg-amber-500/10 text-amber-500 border-amber-500/30">
+                            <Badge variant="outline" className="text-[10px] h-4.5 px-1.5 shrink-0 bg-amber-500/10 text-amber-500 border-amber-500/30">
                               Featured
                             </Badge>
                           )}
@@ -240,8 +251,8 @@ export function ProjectsTable({
                   </TableCell>
 
                   {/* Stack */}
-                  <TableCell className="hidden md:table-cell">
-                    <div className="flex flex-wrap gap-1 max-w-[280px]">
+                  <TableCell className="hidden lg:table-cell">
+                    <div className="flex flex-wrap gap-1">
                       {project.stack?.slice(0, 3).map((stk, i) => (
                         <span
                           key={i}
@@ -262,7 +273,7 @@ export function ProjectsTable({
                   <TableCell>{getStatusBadge(project.status)}</TableCell>
 
                   {/* Links */}
-                  <TableCell className="hidden lg:table-cell">
+                  <TableCell className="hidden xl:table-cell">
                     <div className="flex items-center gap-2">
                       {project.liveLink && (
                         <a

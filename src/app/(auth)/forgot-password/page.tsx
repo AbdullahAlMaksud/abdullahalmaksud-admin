@@ -31,29 +31,29 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Card className="border-slate-800 bg-slate-900/90 shadow-2xl backdrop-blur-xl text-slate-100">
-        <CardHeader className="text-center space-y-1.5 pb-4">
-          <CardTitle className="text-2xl font-bold tracking-tight text-white">
+      <Card className="border-neutral-200 bg-white text-neutral-950 shadow-none">
+        <CardHeader className="space-y-1.5 pb-4 text-center">
+          <CardTitle className="text-xl font-bold tracking-tight text-neutral-950">
             {t("auth.forgotPasswordTitle")}
           </CardTitle>
-          <CardDescription className="text-slate-400 text-sm">
+          <CardDescription className="text-sm text-neutral-500">
             {t("auth.forgotPasswordSubtitle")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-slate-300 text-xs font-medium">
+              <Label htmlFor="email" className="text-xs font-medium text-neutral-800">
                 {t("auth.emailLabel")}
               </Label>
               <div className="relative">
-                <IconMail className="absolute left-3 top-2.5 size-4 text-slate-500" />
+                <IconMail className="absolute top-3 left-3 size-4 text-neutral-400" />
                 <Input
                   id="email"
                   type="email"
                   placeholder={t("auth.emailPlaceholder")}
                   required
-                  className="pl-9 bg-slate-950/60 border-slate-800 focus-visible:ring-emerald-500 text-slate-100 placeholder:text-slate-600 text-sm h-10"
+                  className="h-10 border-neutral-200 bg-white pl-9 text-sm text-neutral-950 placeholder:text-neutral-400 focus-visible:border-neutral-950 focus-visible:ring-0"
                 />
               </div>
             </div>
@@ -61,7 +61,7 @@ export default function ForgotPasswordPage() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold h-10 shadow-lg shadow-emerald-600/20 transition-all gap-2 mt-2"
+              className="mt-2 h-10 w-full gap-2 bg-neutral-950 font-medium text-white shadow-none hover:bg-neutral-800"
             >
               <IconSend className="size-4" />
               <span>{isLoading ? t("auth.sendingResetLink") : t("auth.sendResetLink")}</span>
@@ -71,7 +71,7 @@ export default function ForgotPasswordPage() {
           <div className="mt-6 text-center text-xs">
             <Link
               href="/signin"
-              className="inline-flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors"
+              className="inline-flex items-center gap-1.5 text-neutral-500 transition-colors hover:text-neutral-950"
             >
               <IconArrowLeft className="size-3.5" />
               <span>{t("auth.backToSignIn")}</span>

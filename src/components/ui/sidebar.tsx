@@ -30,7 +30,7 @@ const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
-const SIDEBAR_KEYBOARD_SHORTCUT = "b"
+const SIDEBAR_KEYBOARD_SHORTCUTS = new Set(["d", "b"])
 
 type SidebarContextProps = {
   state: "expanded" | "collapsed"
@@ -97,8 +97,10 @@ function SidebarProvider({
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (
-        event.key === SIDEBAR_KEYBOARD_SHORTCUT &&
-        (event.metaKey || event.ctrlKey)
+        SIDEBAR_KEYBOARD_SHORTCUTS.has(event.key.toLowerCase()) &&
+        (event.metaKey || event.ctrlKey) &&
+        !event.altKey &&
+        !event.shiftKey
       ) {
         event.preventDefault()
         toggleSidebar()
@@ -139,7 +141,7 @@ function SidebarProvider({
             } as React.CSSProperties
           }
           className={cn(
-            "group/sidebar-wrapper flex min-h-svh w-full has-data-[variant=inset]:bg-sidebar",
+            "group/sidebar-wrapper flex min-h-svh md:h-svh w-full overflow-x-hidden md:overflow-hidden has-data-[variant=inset]:bg-sidebar",
             className
           )}
           {...props}
@@ -309,8 +311,8 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
     <main
       data-slot="sidebar-inset"
       className={cn(
-        "relative flex w-full flex-1 flex-col bg-background",
-        "md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2",
+        "relative flex min-w-0 w-full flex-1 flex-col overflow-x-hidden md:h-[calc(100svh-1.25rem)] md:overflow-hidden bg-background",
+        "md:peer-data-[variant=inset]:my-2.5 md:peer-data-[variant=inset]:mr-2.5 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-2xl md:peer-data-[variant=inset]:shadow-none md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2.5",
         className
       )}
       {...props}
@@ -640,7 +642,7 @@ function SidebarMenuSub({ className, ...props }: React.ComponentProps<"ul">) {
       data-slot="sidebar-menu-sub"
       data-sidebar="menu-sub"
       className={cn(
-        "mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-sidebar-border px-2.5 py-0.5",
+        "ml-4 flex min-w-0 translate-x-px flex-col gap-1 border-l border-sidebar-border pl-3.5 py-1",
         "group-data-[collapsible=icon]:hidden",
         className
       )}
@@ -657,7 +659,10 @@ function SidebarMenuSubItem({
     <li
       data-slot="sidebar-menu-sub-item"
       data-sidebar="menu-sub-item"
-      className={cn("group/menu-sub-item relative", className)}
+      className={cn(
+        "group/menu-sub-item relative before:content-[''] before:pointer-events-none before:absolute before:-left-3.5 before:top-1/2 before:w-2.5 before:h-px before:bg-sidebar-border",
+        className
+      )}
       {...props}
     />
   )

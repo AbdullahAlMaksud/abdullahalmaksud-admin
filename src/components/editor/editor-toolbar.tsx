@@ -41,7 +41,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Separator } from "@/components/ui/separator";
 import {
   IconBold,
   IconItalic,
@@ -65,7 +64,10 @@ import {
   IconArrowForwardUp,
   IconChevronDown,
   IconClearFormatting,
+  IconPhotoPlus,
+  IconTable,
 } from "@tabler/icons-react";
+import { insertTableAtCursor } from "./block-palette";
 
 const blockTypeToBlockName = {
   paragraph: "Normal",
@@ -80,7 +82,13 @@ const blockTypeToBlockName = {
 
 type BlockTypeKey = keyof typeof blockTypeToBlockName;
 
-export function EditorToolbar() {
+export function EditorToolbar({
+  borderless = false,
+  onRequestImage,
+}: {
+  borderless?: boolean;
+  onRequestImage?: () => void;
+}) {
   const [editor] = useLexicalComposerContext();
   const [blockType, setBlockType] = useState<BlockTypeKey>("paragraph");
   const [isBold, setIsBold] = useState(false);
@@ -247,7 +255,13 @@ export function EditorToolbar() {
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-1 p-1.5 bg-card border-b border-border/80 sticky top-0 z-20 backdrop-blur-xs rounded-t-xl">
+    <div
+      className={
+        borderless
+          ? "flex w-full shrink-0 flex-wrap items-center gap-x-1 gap-y-1.5 py-2 border-b border-neutral-200/80 bg-transparent"
+          : "flex w-full shrink-0 flex-wrap items-center gap-x-1 gap-y-1.5 p-1.5 bg-card border-b border-border/80 sticky top-0 z-20 backdrop-blur-xs rounded-t-xl"
+      }
+    >
       {/* Undo / Redo */}
       <div className="flex items-center">
         <Button
@@ -274,7 +288,7 @@ export function EditorToolbar() {
         </Button>
       </div>
 
-      <Separator orientation="vertical" className="h-5 mx-0.5" />
+      <span aria-hidden="true" className="mx-1 h-4 w-px shrink-0 bg-border" />
 
       {/* Block Type Dropdown */}
       <DropdownMenu>
@@ -324,7 +338,7 @@ export function EditorToolbar() {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Separator orientation="vertical" className="h-5 mx-0.5" />
+      <span aria-hidden="true" className="mx-1 h-4 w-px shrink-0 bg-border" />
 
       {/* Inline Formats */}
       <div className="flex items-center gap-0.5">
@@ -419,7 +433,7 @@ export function EditorToolbar() {
         </Button>
       </div>
 
-      <Separator orientation="vertical" className="h-5 mx-0.5" />
+      <span aria-hidden="true" className="mx-1 h-4 w-px shrink-0 bg-border" />
 
       {/* Alignment */}
       <div className="flex items-center gap-0.5">
@@ -465,10 +479,34 @@ export function EditorToolbar() {
         </Button>
       </div>
 
-      <Separator orientation="vertical" className="h-5 mx-0.5" />
+      <span aria-hidden="true" className="mx-1 h-4 w-px shrink-0 bg-border" />
 
-      {/* Insert Divider / Clear */}
+      {/* Insert Image / Divider / Clear */}
       <div className="flex items-center gap-0.5">
+        {onRequestImage && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onRequestImage}
+            className="h-8 px-2 gap-1 text-xs text-muted-foreground hover:text-foreground"
+            title="Insert Image with Caption"
+          >
+            <IconPhotoPlus className="size-4" />
+            <span className="hidden sm:inline">Image</span>
+          </Button>
+        )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => insertTableAtCursor(editor)}
+          className="h-8 px-2 gap-1 text-xs text-muted-foreground hover:text-foreground"
+          title="Insert Table"
+        >
+          <IconTable className="size-4" />
+          <span className="hidden sm:inline">Table</span>
+        </Button>
         <Button
           type="button"
           variant="ghost"

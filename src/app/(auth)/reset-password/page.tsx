@@ -34,45 +34,45 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Card className="border-slate-800 bg-slate-900/90 shadow-2xl backdrop-blur-xl text-slate-100">
-        <CardHeader className="text-center space-y-1.5 pb-4">
-          <CardTitle className="text-2xl font-bold tracking-tight text-white">
+      <Card className="border-neutral-200 bg-white text-neutral-950 shadow-none">
+        <CardHeader className="space-y-1.5 pb-4 text-center">
+          <CardTitle className="text-xl font-bold tracking-tight text-neutral-950">
             {t("auth.resetPasswordTitle")}
           </CardTitle>
-          <CardDescription className="text-slate-400 text-sm">
+          <CardDescription className="text-sm text-neutral-500">
             {t("auth.resetPasswordSubtitle")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="newPassword" className="text-slate-300 text-xs font-medium">
+              <Label htmlFor="newPassword" className="text-xs font-medium text-neutral-800">
                 {t("auth.newPasswordLabel")}
               </Label>
               <div className="relative">
-                <IconLock className="absolute left-3 top-2.5 size-4 text-slate-500" />
+                <IconLock className="absolute top-3 left-3 size-4 text-neutral-400" />
                 <Input
                   id="newPassword"
                   type="password"
                   placeholder={t("auth.passwordPlaceholder")}
                   required
-                  className="pl-9 bg-slate-950/60 border-slate-800 focus-visible:ring-emerald-500 text-slate-100 placeholder:text-slate-600 text-sm h-10"
+                  className="h-10 border-neutral-200 bg-white pl-9 text-sm text-neutral-950 placeholder:text-neutral-400 focus-visible:border-neutral-950 focus-visible:ring-0"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-slate-300 text-xs font-medium">
+              <Label htmlFor="confirmPassword" className="text-xs font-medium text-neutral-800">
                 {t("auth.confirmPasswordLabel")}
               </Label>
               <div className="relative">
-                <IconLock className="absolute left-3 top-2.5 size-4 text-slate-500" />
+                <IconLock className="absolute top-3 left-3 size-4 text-neutral-400" />
                 <Input
                   id="confirmPassword"
                   type="password"
                   placeholder={t("auth.passwordPlaceholder")}
                   required
-                  className="pl-9 bg-slate-950/60 border-slate-800 focus-visible:ring-emerald-500 text-slate-100 placeholder:text-slate-600 text-sm h-10"
+                  className="h-10 border-neutral-200 bg-white pl-9 text-sm text-neutral-950 placeholder:text-neutral-400 focus-visible:border-neutral-950 focus-visible:ring-0"
                 />
               </div>
             </div>
@@ -80,7 +80,7 @@ export default function ResetPasswordPage() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold h-10 shadow-lg shadow-emerald-600/20 transition-all gap-2 mt-2"
+              className="mt-2 h-10 w-full gap-2 bg-neutral-950 font-medium text-white shadow-none hover:bg-neutral-800"
             >
               <IconKey className="size-4" />
               <span>{t("auth.resetPasswordButton")}</span>
@@ -90,7 +90,7 @@ export default function ResetPasswordPage() {
           <div className="mt-6 text-center text-xs">
             <Link
               href="/signin"
-              className="text-slate-400 hover:text-white transition-colors"
+              className="text-neutral-500 transition-colors hover:text-neutral-950"
             >
               {t("auth.backToSignIn")}
             </Link>

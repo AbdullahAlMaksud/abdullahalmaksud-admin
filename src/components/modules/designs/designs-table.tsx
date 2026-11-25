@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from "react"
 import { Design } from "@/lib/api/types"
 import { updateDesign } from "@/lib/api/designs"
+import { resolveAssetUrl } from "@/lib/asset-url"
 import {
   Table,
   TableBody,
@@ -37,6 +38,7 @@ import { toast } from "sonner"
 interface DesignsTableProps {
   designs: Design[]
   loading: boolean
+  showAddButton?: boolean
   onAdd: () => void
   onEdit: (design: Design) => void
   onDelete: (design: Design) => void
@@ -46,6 +48,7 @@ interface DesignsTableProps {
 export function DesignsTable({
   designs,
   loading,
+  showAddButton = true,
   onAdd,
   onEdit,
   onDelete,
@@ -100,11 +103,11 @@ export function DesignsTable({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 min-w-0 w-full">
       {/* Header Toolbar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="flex flex-1 items-center gap-2 max-w-md">
-          <div className="relative w-full">
+      <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-between gap-3 bg-card p-4 rounded-xl border">
+        <div className="flex flex-wrap sm:flex-nowrap flex-1 items-center gap-2.5 min-w-0">
+          <div className="relative flex-1 min-w-[160px] max-w-sm">
             <IconSearch className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
             <Input
               placeholder="Search designs by title, category, or tool..."
@@ -118,7 +121,7 @@ export function DesignsTable({
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
               aria-label="Filter designs by category"
-              className="h-9 rounded-md border bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              className="h-9 w-full sm:w-auto shrink-0 rounded-md border bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             >
               <option value="all">All Categories</option>
               {categories.map((c) => (
@@ -130,23 +133,25 @@ export function DesignsTable({
           )}
         </div>
 
-        <Button onClick={onAdd} size="sm" className="gap-1.5 h-9 text-xs">
-          <IconPlus className="size-4" />
-          <span>Add Design</span>
-        </Button>
+        {showAddButton && (
+          <Button onClick={onAdd} size="sm" className="gap-1.5 h-9 text-xs w-full sm:w-auto shrink-0 font-medium">
+            <IconPlus className="size-4" />
+            <span>Add Design</span>
+          </Button>
+        )}
       </div>
 
       {/* Table Container */}
-      <div className="rounded-lg border bg-card shadow-xs overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/40">
+      <div className="rounded-xl border bg-card shadow-xs overflow-hidden">
+        <Table className="table-fixed w-full">
+          <TableHeader className="bg-muted/40">
+            <TableRow>
               <TableHead className="w-16">Preview</TableHead>
               <TableHead>Design & Title</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Tools</TableHead>
-              <TableHead className="w-20 text-center">Year</TableHead>
-              <TableHead className="w-24 text-center">Featured</TableHead>
+              <TableHead className="hidden lg:table-cell w-36">Category</TableHead>
+              <TableHead className="hidden xl:table-cell w-44">Tools</TableHead>
+              <TableHead className="hidden sm:table-cell w-16 text-center">Year</TableHead>
+              <TableHead className="w-20 text-center">Featured</TableHead>
               <TableHead className="w-16 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -204,7 +209,7 @@ export function DesignsTable({
                       <div className="relative size-12 rounded-md overflow-hidden bg-muted border shrink-0">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={design.coverImage}
+                          src={resolveAssetUrl(design.coverImage)}
                           alt={design.title}
                           className="size-full object-cover"
                           onError={(e) => {
@@ -216,25 +221,27 @@ export function DesignsTable({
 
                     {/* Title & Subtitle */}
                     <TableCell>
-                      <div className="font-semibold text-sm leading-tight text-foreground">
-                        {design.title}
-                      </div>
-                      {design.subtitle && (
-                        <div className="text-xs text-muted-foreground truncate max-w-xs mt-0.5">
-                          {design.subtitle}
+                      <div className="min-w-0">
+                        <div className="font-semibold text-sm leading-tight text-foreground truncate">
+                          {design.title}
                         </div>
-                      )}
+                        {design.subtitle && (
+                          <div className="text-xs text-muted-foreground truncate mt-0.5">
+                            {design.subtitle}
+                          </div>
+                        )}
+                      </div>
                     </TableCell>
 
                     {/* Category */}
-                    <TableCell>
-                      <Badge variant="secondary" className="text-xs font-normal">
+                    <TableCell className="hidden lg:table-cell">
+                      <Badge variant="secondary" className="text-xs font-normal max-w-full truncate">
                         {design.category || "Design"}
                       </Badge>
                     </TableCell>
 
                     {/* Tools */}
-                    <TableCell>
+                    <TableCell className="hidden xl:table-cell">
                       <div className="flex flex-wrap gap-1 max-w-[200px]">
                         {design.tools?.slice(0, 3).map((tool) => (
                           <span
@@ -253,7 +260,7 @@ export function DesignsTable({
                     </TableCell>
 
                     {/* Year */}
-                    <TableCell className="text-center text-xs tabular-nums text-muted-foreground">
+                    <TableCell className="hidden sm:table-cell text-center text-xs tabular-nums text-muted-foreground">
                       {design.year || "—"}
                     </TableCell>
 

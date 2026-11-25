@@ -30,6 +30,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { getCurrentUser, signOut } from "@/lib/api/auth"
+import { resolveAssetUrl } from "@/lib/asset-url"
 import { useAuth } from "@/components/auth/auth-provider"
 import { toast } from "sonner"
 
@@ -108,21 +109,21 @@ export function NavUser({
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              className="text-neutral-300 hover:bg-white/10 hover:text-white data-[state=open]:bg-white/10 data-[state=open]:text-white"
             >
-              <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
-                <AvatarFallback className="rounded-lg bg-primary/20 text-primary text-xs font-bold">
+              <Avatar className="h-8 w-8 rounded-lg border border-white/15">
+                <AvatarImage src={resolveAssetUrl(currentUser.avatar)} alt={currentUser.name} />
+                <AvatarFallback className="rounded-lg bg-white/10 text-white text-xs font-bold">
                   {getInitials(currentUser.name)}
                 </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{currentUser.name}</span>
-                <span className="truncate text-xs text-muted-foreground">
+                <span className="truncate font-medium text-neutral-200">{currentUser.name}</span>
+                <span className="truncate text-xs text-neutral-500">
                   {currentUser.email}
                 </span>
               </div>
-              <IconDotsVertical className="ml-auto size-4" />
+              <IconDotsVertical className="ml-auto size-4 text-neutral-400" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -134,7 +135,7 @@ export function NavUser({
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
+                  <AvatarImage src={resolveAssetUrl(currentUser.avatar)} alt={currentUser.name} />
                   <AvatarFallback className="rounded-lg bg-primary/20 text-primary text-xs font-bold">
                     {getInitials(currentUser.name)}
                   </AvatarFallback>

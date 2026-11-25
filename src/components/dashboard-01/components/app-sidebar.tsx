@@ -1,137 +1,139 @@
 "use client"
 
 import * as React from "react"
-import { useTranslation } from "react-i18next"
-import {
-  IconArticle,
-  IconBook,
-  IconBuildingArch,
-  IconCloudUpload,
-  IconDashboard,
-  IconFolder,
-  IconHelp,
-  IconMessages,
-  IconPalette,
-  IconSettings,
-  IconUser,
-} from "@tabler/icons-react"
-
-import { NavMain } from "@/components/dashboard-01/components/nav-main"
-import { NavSecondary } from "@/components/dashboard-01/components/nav-secondary"
+import Link from "next/link"
+import { BrandLogo } from "@/components/ui/brand-logo"
+import { NavMain, type NavGroup } from "@/components/dashboard-01/components/nav-main"
 import { NavUser } from "@/components/dashboard-01/components/nav-user"
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import Link from "next/link"
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    items: [
+      {
+        title: "Overview",
+        url: "/dashboard",
+        icon: "overview",
+      },
+    ],
+  },
+  {
+    label: "Project",
+    items: [
+      {
+        title: "Project Management",
+        url: "/dashboard/projects",
+        icon: "projects",
+        subItems: [
+          { title: "Add New Project", url: "/dashboard/projects/create" },
+          { title: "Categories", url: "/dashboard/projects/categories" },
+          { title: "Tags & Stack", url: "/dashboard/projects/tags" },
+        ],
+      },
+      {
+        title: "Case Study Management",
+        url: "/dashboard/case-studies",
+        icon: "case-studies",
+        subItems: [
+          { title: "Add Case Study", url: "/dashboard/case-studies/create" },
+          { title: "Categories", url: "/dashboard/case-studies/categories" },
+          { title: "Tags", url: "/dashboard/case-studies/tags" },
+        ],
+      },
+    ],
+  },
+  {
+    label: "Writing",
+    items: [
+      {
+        title: "Blog Management",
+        url: "/dashboard/blogs",
+        icon: "blogs",
+        subItems: [
+          { title: "Add New Article", url: "/dashboard/blogs/create" },
+          { title: "Categories", url: "/dashboard/blogs/categories" },
+          { title: "Tags", url: "/dashboard/blogs/tags" },
+        ],
+      },
+      {
+        title: "Book Management",
+        url: "/dashboard/books",
+        icon: "books",
+        subItems: [
+          { title: "Add New Book", url: "/dashboard/books/create" },
+          { title: "Featured Bundle", url: "/dashboard/books/bundle" },
+          { title: "Tags & Genres", url: "/dashboard/books/tags" },
+        ],
+      },
+    ],
+  },
+  {
+    label: "Design",
+    items: [
+      {
+        title: "Graphics Design",
+        url: "/dashboard/designs",
+        icon: "designs",
+      },
+    ],
+  },
+  {
+    label: "Setup",
+    items: [
+      {
+        title: "Media Management",
+        url: "/dashboard/media",
+        icon: "media",
+      },
+      {
+        title: "Messages",
+        url: "/dashboard/messages",
+        icon: "messages",
+      },
+      {
+        title: "Preference",
+        url: "/dashboard/preference",
+        icon: "preference",
+      },
+      {
+        title: "Settings",
+        url: "/dashboard/settings",
+        icon: "settings",
+      },
+    ],
+  },
+]
+
+const DEFAULT_USER = {
+  name: "Abdullah Al Maksud",
+  email: "contact@abdullahalmaksud.com",
+  avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Abdullah",
+}
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { t } = useTranslation()
-
-  const data = {
-    user: {
-      name: "Abdullah Al Maksud",
-      email: "contact@abdullahalmaksud.com",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Abdullah",
-    },
-    navMain: [
-      {
-        titleKey: "nav.dashboard",
-        url: "/dashboard",
-        icon: IconDashboard,
-      },
-      {
-        titleKey: "nav.caseStudies",
-        url: "/dashboard/case-studies",
-        icon: IconBuildingArch,
-      },
-      {
-        titleKey: "nav.projects",
-        url: "/dashboard/projects",
-        icon: IconFolder,
-      },
-      {
-        titleKey: "nav.blogs",
-        url: "/dashboard/blogs",
-        icon: IconArticle,
-      },
-      {
-        titleKey: "nav.books",
-        url: "/dashboard/books",
-        icon: IconBook,
-      },
-      {
-        titleKey: "nav.designs",
-        url: "/dashboard/designs",
-        icon: IconPalette,
-      },
-      {
-        titleKey: "nav.media",
-        url: "/dashboard/media",
-        icon: IconCloudUpload,
-      },
-      {
-        titleKey: "nav.messages",
-        url: "/dashboard/messages",
-        icon: IconMessages,
-      },
-      {
-        titleKey: "nav.settings",
-        url: "/dashboard/settings",
-        icon: IconSettings,
-      },
-    ],
-    navSecondary: [
-      {
-        title: t("nav.profileSettings"),
-        url: "/dashboard/settings",
-        icon: IconUser,
-      },
-      {
-        title: t("nav.helpSupport"),
-        url: "#",
-        icon: IconHelp,
-      },
-    ],
-  }
-
   return (
     <Sidebar collapsible="offcanvas" {...props}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:p-1.5!"
-            >
-              <Link href="/dashboard" className="flex items-center gap-2">
-                <div className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-xs">
-                  AM
-                </div>
-                <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="text-sm font-bold tracking-tight">
-                    Abdullah Al Maksud
-                  </span>
-                  <span className="text-[10px] text-muted-foreground font-medium">
-                    {t("nav.adminPortal")}
-                  </span>
-                </div>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      <SidebarHeader className="px-3.5 pt-4 pb-2">
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center w-fit rounded-md p-1 transition-opacity hover:opacity-80"
+          aria-label="Abdullah Al Maksud Dashboard"
+        >
+          <BrandLogo variant="dark" className="h-[22px] w-auto" />
+        </Link>
       </SidebarHeader>
-      <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+
+      <SidebarContent className="no-scrollbar px-1.5 py-2 gap-0.5">
+        <NavMain groups={NAV_GROUPS} />
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={data.user} />
+
+      <SidebarFooter className="px-2 pb-3 pt-1">
+        <NavUser user={DEFAULT_USER} />
       </SidebarFooter>
     </Sidebar>
   )

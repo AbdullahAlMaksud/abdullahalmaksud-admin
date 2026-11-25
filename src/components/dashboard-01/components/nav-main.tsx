@@ -1,148 +1,238 @@
 "use client"
 
+import React, { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useTranslation } from "react-i18next"
 import {
-  IconCirclePlusFilled,
-  IconMail,
-  IconBook,
-  IconFolder,
+  IconAdjustmentsHorizontal,
   IconArticle,
+  IconBook,
   IconBuildingArch,
-  IconPalette,
-  IconCloudUpload,
   IconChevronDown,
-  type Icon,
+  IconFolderCode,
+  IconGauge,
+  IconMessages,
+  IconPalette,
+  IconPhoto,
+  IconSettings,
 } from "@tabler/icons-react"
 
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import {
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
+import { cn } from "@/lib/utils"
 
-export function NavMain({
-  items,
-}: {
-  items: {
-    titleKey: string
-    url: string
-    icon?: Icon
-  }[]
-}) {
+export type NavIconKey =
+  | "overview"
+  | "projects"
+  | "case-studies"
+  | "blogs"
+  | "books"
+  | "designs"
+  | "media"
+  | "messages"
+  | "preference"
+  | "settings"
+
+const NAV_ICON_MAP: Record<NavIconKey, React.ComponentType<{ className?: string }>> = {
+  overview: IconGauge,
+  projects: IconFolderCode,
+  "case-studies": IconBuildingArch,
+  blogs: IconArticle,
+  books: IconBook,
+  designs: IconPalette,
+  media: IconPhoto,
+  messages: IconMessages,
+  preference: IconAdjustmentsHorizontal,
+  settings: IconSettings,
+}
+
+export interface NavSubItem {
+  title: string
+  url: string
+}
+
+export interface NavItem {
+  title: string
+  url: string
+  icon: NavIconKey
+  subItems?: NavSubItem[]
+}
+
+export interface NavGroup {
+  label?: string
+  items: NavItem[]
+}
+
+export function NavMain({ groups }: { groups: NavGroup[] }) {
   const pathname = usePathname()
-  const { t } = useTranslation()
+
+  const isUrlMatch = (targetUrl: string): boolean => {
+    if (targetUrl === "/dashboard") {
+      return pathname === "/dashboard"
+    }
+    return pathname === targetUrl
+  }
+
+  const isParentActive = (item: NavItem): boolean => {
+    if (item.url === "/dashboard") {
+      return pathname === "/dashboard"
+    }
+    if (pathname === item.url || pathname.startsWith(`${item.url}/`)) {
+      return true
+    }
+    return Boolean(
+      item.subItems?.some(
+        (sub) => pathname === sub.url || pathname.startsWith(`${sub.url}/`),
+      ),
+    )
+  }
+
+  const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {}
+    for (const group of groups) {
+      for (const item of group.items) {
+        if (item.subItems && item.subItems.length > 0) {
+          initial[item.title] = isParentActive(item)
+        }
+      }
+    }
+    return initial
+  })
+
+  // Keep the active route's submenu expanded on navigation
+  useEffect(() => {
+    setExpandedMap((prev) => {
+      const next = { ...prev }
+      for (const group of groups) {
+        for (const item of group.items) {
+          if (item.subItems && item.subItems.length > 0 && isParentActive(item)) {
+            next[item.title] = true
+          }
+        }
+      }
+      return next
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname])
+
+  const toggleItem = (title: string) => {
+    setExpandedMap((prev) => ({ ...prev, [title]: !prev[title] }))
+  }
 
   return (
-    <SidebarGroup>
-      <SidebarGroupContent className="flex flex-col gap-2">
-        <SidebarMenu>
-          <SidebarMenuItem className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  tooltip={t("nav.addItem")}
-                  className="min-w-8 bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-2">
-                    <IconCirclePlusFilled className="size-4" />
-                    <span>{t("nav.addItem")}</span>
-                  </div>
-                  <IconChevronDown className="size-3.5 opacity-80" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
-                <DropdownMenuLabel className="text-xs text-muted-foreground">
-                  {t("nav.quickCreateLabel")}
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/case-studies" className="flex items-center gap-2 cursor-pointer">
-                    <IconBuildingArch className="size-4 text-cyan-500" />
-                    <span>{t("nav.createCaseStudy")}</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/projects" className="flex items-center gap-2 cursor-pointer">
-                    <IconFolder className="size-4 text-emerald-500" />
-                    <span>{t("nav.createProject")}</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/blogs" className="flex items-center gap-2 cursor-pointer">
-                    <IconArticle className="size-4 text-purple-500" />
-                    <span>{t("nav.createBlog")}</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/books" className="flex items-center gap-2 cursor-pointer">
-                    <IconBook className="size-4 text-blue-500" />
-                    <span>{t("nav.createBook")}</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/designs" className="flex items-center gap-2 cursor-pointer">
-                    <IconPalette className="size-4 text-rose-500" />
-                    <span>{t("nav.createDesign")}</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/media" className="flex items-center gap-2 cursor-pointer">
-                    <IconCloudUpload className="size-4 text-amber-500" />
-                    <span>{t("nav.uploadMedia")}</span>
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+    <div className="flex flex-col gap-1">
+      {groups.map((group, gIdx) => (
+        <SidebarGroup key={group.label || `group-${gIdx}`} className="px-1.5 py-1">
+          {group.label && (
+            <SidebarGroupLabel className="px-2.5 h-6 text-[10.5px] font-normal text-neutral-500">
+              {group.label}
+            </SidebarGroupLabel>
+          )}
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-1">
+              {group.items.map((item) => {
+                const hasSubItems = Boolean(item.subItems && item.subItems.length > 0)
+                const active = isParentActive(item)
+                const isExpanded = !!expandedMap[item.title]
+                const IconComp = NAV_ICON_MAP[item.icon] || IconGauge
 
-            <Button
-              size="icon"
-              className="size-8 group-data-[collapsible=icon]:opacity-0"
-              variant="outline"
-              asChild
-            >
-              <Link href="/dashboard/settings">
-                <IconMail className="size-4" />
-                <span className="sr-only">Settings</span>
-              </Link>
-            </Button>
-          </SidebarMenuItem>
-        </SidebarMenu>
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    {hasSubItems ? (
+                      <>
+                        <div
+                          className={cn(
+                            "flex items-center justify-between w-full rounded-lg transition-colors",
+                            active
+                              ? "bg-[#E8E8E8] text-[#0A0A0A] font-medium"
+                              : "text-neutral-300 hover:bg-white/10 hover:text-white",
+                          )}
+                        >
+                          <Link
+                            href={item.url}
+                            onClick={() => {
+                              setExpandedMap((prev) => ({ ...prev, [item.title]: true }))
+                            }}
+                            className="flex flex-1 items-center gap-2 pl-2.5 pr-1 py-2 text-[12px] min-w-0"
+                          >
+                            <IconComp className="size-4 shrink-0" />
+                            <span className="truncate">{item.title}</span>
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => toggleItem(item.title)}
+                            aria-label={`Toggle ${item.title}`}
+                            className="px-2 py-2 flex items-center justify-center opacity-75 hover:opacity-100 cursor-pointer shrink-0"
+                          >
+                            <IconChevronDown
+                              className={cn(
+                                "size-3.5 transition-transform duration-200",
+                                isExpanded ? "rotate-0" : "-rotate-90",
+                              )}
+                            />
+                          </button>
+                        </div>
 
-        <SidebarMenu>
-          {items.map((item) => {
-            const isActive = pathname === item.url
-            const title = t(item.titleKey)
-            return (
-              <SidebarMenuItem key={item.titleKey}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive}
-                  tooltip={title}
-                  className={isActive ? "bg-accent text-accent-foreground font-medium" : ""}
-                >
-                  <Link href={item.url}>
-                    {item.icon && <item.icon />}
-                    <span>{title}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            )
-          })}
-        </SidebarMenu>
-      </SidebarGroupContent>
-    </SidebarGroup>
+                        {isExpanded && item.subItems && (
+                          <SidebarMenuSub>
+                            {item.subItems.map((sub) => {
+                              const subActive = isUrlMatch(sub.url)
+                              return (
+                                <SidebarMenuSubItem key={sub.url}>
+                                  <SidebarMenuSubButton
+                                    asChild
+                                    isActive={subActive}
+                                    className={cn(
+                                      "h-8 rounded-md px-3 text-[11.5px] transition-colors",
+                                      subActive
+                                        ? "bg-[#2C2C2C] text-white font-medium hover:bg-[#2C2C2C] hover:text-white"
+                                        : "text-neutral-400 hover:bg-white/8 hover:text-white",
+                                    )}
+                                  >
+                                    <Link href={sub.url}>
+                                      <span>{sub.title}</span>
+                                    </Link>
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                              )
+                            })}
+                          </SidebarMenuSub>
+                        )}
+                      </>
+                    ) : (
+                      <SidebarMenuButton
+                        asChild
+                        isActive={active}
+                        tooltip={item.title}
+                        className={cn(
+                          "h-9 rounded-lg px-2.5 gap-2.5 text-[12px] transition-colors",
+                          active
+                            ? "bg-[#E8E8E8] text-[#0A0A0A] font-medium hover:bg-[#E8E8E8] hover:text-[#0A0A0A]"
+                            : "text-neutral-300 hover:bg-white/10 hover:text-white",
+                        )}
+                      >
+                        <Link href={item.url}>
+                          <IconComp className="size-4 shrink-0" />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    )}
+                  </SidebarMenuItem>
+                )
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      ))}
+    </div>
   )
 }

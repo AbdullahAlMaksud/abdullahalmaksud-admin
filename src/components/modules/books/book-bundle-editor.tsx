@@ -13,7 +13,9 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import Link from "next/link"
 import { ImageUpload } from "@/components/ui/image-upload"
+import { PageSubHeader, StickyActionFooter } from "@/components/dashboard-01/components/sticky-action-bar"
 import {
   IconBook,
   IconCheck,
@@ -24,7 +26,7 @@ import {
 } from "@tabler/icons-react"
 import { toast } from "sonner"
 
-export function BookBundleEditor() {
+export function BookBundleEditor({ showStickyHeader = true }: { showStickyHeader?: boolean }) {
   const { t } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -145,8 +147,17 @@ export function BookBundleEditor() {
   }
 
   return (
-    <form onSubmit={handleSave} className="space-y-6">
-      {/* Featured Book Card */}
+    <form id="book-bundle-form" onSubmit={handleSave} className="flex flex-1 min-w-0 flex-col w-full">
+      {showStickyHeader && (
+        <PageSubHeader
+          backHref="/dashboard/books"
+          backLabel="Back to Books"
+          description="Customize the featured book showcase, Rokomari link, and reader statistics shown on your website."
+        />
+      )}
+
+      <div className={showStickyHeader ? "flex-1 min-w-0 p-4 lg:p-6 space-y-6" : "space-y-6"}>
+        {/* Featured Book Card */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
@@ -254,9 +265,15 @@ export function BookBundleEditor() {
                 onChange={(url) =>
                   setFeaturedBook({ ...featuredBook, coverImage: url })
                 }
-                placeholder="/images/books/emon-jodi-hoto.webp"
                 module="book"
-                folderKey="featured"
+                folderKey={
+                  featuredBook.titleEn
+                    ? featuredBook.titleEn
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, "-")
+                        .replace(/^-|-$/g, "")
+                    : "emon-jodi-hoto"
+                }
               />
             </div>
 
@@ -349,17 +366,35 @@ export function BookBundleEditor() {
         </CardContent>
       </Card>
 
-      {/* Save Button */}
-      <div className="flex justify-end">
-        <Button type="submit" disabled={saving} className="gap-2">
-          {saving ? (
-            <IconLoader2 className="size-4 animate-spin" />
-          ) : (
-            <IconCheck className="size-4" />
-          )}
-          <span>Save Book Bundle Settings</span>
-        </Button>
+        {!showStickyHeader && (
+          <div className="flex justify-end">
+            <Button type="submit" disabled={saving} className="gap-2">
+              {saving ? (
+                <IconLoader2 className="size-4 animate-spin" />
+              ) : (
+                <IconCheck className="size-4" />
+              )}
+              <span>Save Book Bundle Settings</span>
+            </Button>
+          </div>
+        )}
       </div>
+
+      {showStickyHeader && (
+        <StickyActionFooter
+          right={
+            <>
+              <Button variant="outline" size="sm" asChild className="h-8 text-xs">
+                <Link href="/dashboard/books">Cancel</Link>
+              </Button>
+              <Button type="submit" disabled={saving} size="sm" className="h-8 text-xs gap-1.5 font-medium">
+                {saving ? <IconLoader2 className="size-3.5 animate-spin" /> : <IconCheck className="size-3.5" />}
+                <span>Save Book Bundle</span>
+              </Button>
+            </>
+          }
+        />
+      )}
     </form>
   )
 }

@@ -14,16 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { sendOtp, verifyOtp, signOut, getCurrentUser } from "@/lib/api/auth";
 import { useAuth } from "@/components/auth/auth-provider";
-import {
-  IconArrowLeft,
-  IconCheck,
-  IconEdit,
-  IconKey,
-  IconLoader2,
-  IconMail,
-  IconRefresh,
-  IconShieldLock,
-} from "@tabler/icons-react";
+import { BrandLogo } from "@/components/ui/brand-logo";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export function LoginForm({
@@ -261,62 +253,54 @@ export function LoginForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      {/* ------------------------------------------------------------- */}
-      {/* STEP 1: EMAIL ENTRY                                           */}
-      {/* ------------------------------------------------------------- */}
       {step === "email" && (
         <form onSubmit={handleSendOtp}>
           <FieldGroup>
-            {/* Header */}
             <div className="flex flex-col items-center gap-2 text-center">
-              <div className="flex size-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-lg shadow-emerald-500/5">
-                <IconShieldLock className="size-6" />
+              <div className="flex flex-col items-center gap-2 font-medium">
+                <div className="flex items-center justify-center rounded-md">
+                  <BrandLogo variant="auto" className="h-7 w-auto" />
+                </div>
+                <span className="sr-only">Abdullah Al Maksud</span>
               </div>
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                {t("auth.loginTitle") || "Admin Sign In"}
+              <h1 className="text-xl font-bold">
+                {t("auth.loginTitle") || "Welcome to Admin Portal"}
               </h1>
-              <FieldDescription className="text-muted-foreground text-sm max-w-sm">
+              <FieldDescription>
                 {t("auth.loginSubtitle") ||
-                  "Enter your admin email to receive a secure one-time verification code"}
+                  "Enter your admin email to continue"}
               </FieldDescription>
             </div>
 
-            {/* Email Field */}
-            <Field className="mt-2">
-              <FieldLabel htmlFor="email" className="text-xs font-semibold text-foreground/80">
-                {t("auth.emailLabel") || "Email Address"}
+            <Field>
+              <FieldLabel htmlFor="email">
+                {t("auth.emailLabel") || "Email"}
               </FieldLabel>
-              <div className="relative">
-                <IconMail className="absolute left-3.5 top-3 size-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder={t("auth.emailPlaceholder") || "admin@example.com"}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                  autoFocus
-                  disabled={isLoading}
-                  className="pl-10 h-11 bg-background/60 border-border/80 text-sm focus-visible:ring-emerald-500 transition-all shadow-inner"
-                />
-              </div>
+              <Input
+                id="email"
+                type="email"
+                placeholder={t("auth.emailPlaceholder") || "m@example.com"}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+                autoFocus
+                disabled={isLoading}
+              />
             </Field>
 
-            {/* Send Code Button */}
-            <Field className="mt-2">
+            <Field>
               <Button
                 type="submit"
                 disabled={isLoading || !email.trim()}
-                className="w-full h-11 font-semibold text-sm bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20 transition-all"
               >
                 {isLoading ? (
                   <>
-                    <IconLoader2 className="size-4 animate-spin mr-2" />
+                    <Loader2 className="size-4 animate-spin" />
                     {t("auth.sendingOtp") || "Sending code..."}
                   </>
                 ) : (
-                  t("auth.sendOtpButton") || "Send Verification Code"
+                  t("auth.sendOtpButton") || "Login"
                 )}
               </Button>
             </Field>
@@ -324,54 +308,44 @@ export function LoginForm({
         </form>
       )}
 
-      {/* ------------------------------------------------------------- */}
-      {/* STEP 2: 6-DIGIT OTP VERIFICATION                              */}
-      {/* ------------------------------------------------------------- */}
       {step === "otp" && (
         <form onSubmit={handleVerifySubmit}>
           <FieldGroup>
-            {/* Header */}
             <div className="flex flex-col items-center gap-2 text-center">
-              <div className="flex size-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-lg shadow-emerald-500/5">
-                <IconKey className="size-6" />
+              <div className="flex items-center justify-center rounded-md">
+                <BrandLogo variant="auto" className="h-7 w-auto" />
               </div>
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                {t("auth.verifyTitle") || "Check Your Inbox"}
+              <h1 className="text-xl font-bold">
+                {t("auth.verifyTitle") || "Enter verification code"}
               </h1>
-              <FieldDescription className="text-muted-foreground text-sm max-w-sm">
-                {t("auth.verifySubtitle") ||
-                  "Enter the 6-digit verification code sent to"}
-              </FieldDescription>
-
-              {/* Display Email with Change button */}
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/60 border border-border/80 text-xs font-medium text-foreground">
-                <span className="truncate max-w-[200px]">{email}</span>
+              <FieldDescription>
+                {t("auth.verifySubtitle") || "We sent a 6-digit code to"}{" "}
+                <span className="font-medium text-foreground">{email}</span>.{" "}
                 <button
                   type="button"
                   onClick={() => {
                     setStep("email");
                     setOtp(["", "", "", "", "", ""]);
                   }}
-                  className="text-emerald-400 hover:text-emerald-300 font-semibold underline-offset-2 hover:underline flex items-center gap-1 ml-1"
+                  className="underline underline-offset-4 hover:text-primary"
                 >
-                  <IconEdit className="size-3" />
-                  <span>{t("auth.changeEmail") || "Change"}</span>
+                  {t("auth.changeEmail") || "Change"}
                 </button>
-              </div>
+              </FieldDescription>
             </div>
 
-            {/* 6 Digit Input Cells */}
-            <Field className="mt-4">
-              <FieldLabel className="text-center block text-xs font-semibold text-foreground/80 mb-2">
-                {t("auth.otpLabel") || "6-Digit Verification Code"}
+            <Field>
+              <FieldLabel htmlFor="otp-0" className="sr-only">
+                {t("auth.otpLabel") || "Verification Code"}
               </FieldLabel>
               <div
-                className="flex justify-center items-center gap-2 sm:gap-3"
+                className="flex items-center justify-center gap-2"
                 onPaste={handleOtpPaste}
               >
                 {otp.map((digit, index) => (
                   <input
                     key={index}
+                    id={`otp-${index}`}
                     ref={(el) => {
                       otpInputsRef.current[index] = el;
                     }}
@@ -384,72 +358,58 @@ export function LoginForm({
                     onKeyDown={(e) => handleOtpKeyDown(index, e)}
                     disabled={isLoading}
                     className={cn(
-                      "size-11 sm:size-13 text-center text-xl sm:text-2xl font-bold rounded-xl border bg-background/60 shadow-sm transition-all focus:outline-none focus:ring-2",
-                      digit
-                        ? "border-emerald-500/80 ring-2 ring-emerald-500/30 text-emerald-400 bg-emerald-500/5"
-                        : "border-border/80 focus:border-emerald-500 focus:ring-emerald-500/30 text-foreground"
+                      "border-input bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring/50 size-11 rounded-md border text-center font-mono text-base font-medium transition-colors outline-none focus-visible:ring-[3px]",
+                      digit && "border-foreground"
                     )}
                   />
                 ))}
               </div>
             </Field>
 
-            {/* Verify & Sign In Button */}
-            <Field className="mt-4">
+            <Field>
               <Button
                 type="submit"
                 disabled={isLoading || otp.join("").length !== 6}
-                className="w-full h-11 font-semibold text-sm bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20 transition-all gap-2"
               >
                 {isLoading ? (
                   <>
-                    <IconLoader2 className="size-4 animate-spin" />
-                    <span>{t("auth.verifying") || "Verifying code..."}</span>
+                    <Loader2 className="size-4 animate-spin" />
+                    {t("auth.verifying") || "Verifying..."}
                   </>
                 ) : (
-                  <>
-                    <IconCheck className="size-4" />
-                    <span>{t("auth.verifyButton") || "Verify & Sign In"}</span>
-                  </>
+                  t("auth.verifyButton") || "Verify & Sign In"
                 )}
               </Button>
             </Field>
 
-            {/* Resend Code Section with Countdown */}
-            <div className="flex items-center justify-between pt-2 text-xs text-muted-foreground px-1">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
               <button
                 type="button"
                 onClick={() => {
                   setStep("email");
                   setOtp(["", "", "", "", "", ""]);
                 }}
-                className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors"
+                className="underline underline-offset-4 hover:text-foreground"
               >
-                <IconArrowLeft className="size-3.5" />
-                <span>{t("auth.backToSignIn") || "Back"}</span>
+                {t("auth.backToSignIn") || "Back"}
               </button>
 
               <div>
                 {countdown > 0 ? (
-                  <span className="text-muted-foreground">
+                  <span>
                     {t("auth.resendIn") || "Resend in"}{" "}
-                    <strong className="text-emerald-400 font-mono">
+                    <span className="font-mono font-medium text-foreground">
                       {countdown}s
-                    </strong>
+                    </span>
                   </span>
                 ) : (
                   <button
                     type="button"
                     onClick={handleResendOtp}
                     disabled={isResending}
-                    className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-semibold transition-colors disabled:opacity-50"
+                    className="underline underline-offset-4 hover:text-foreground disabled:opacity-50"
                   >
-                    {isResending ? (
-                      <IconLoader2 className="size-3.5 animate-spin" />
-                    ) : (
-                      <IconRefresh className="size-3.5" />
-                    )}
-                    <span>{t("auth.resendCode") || "Resend Code"}</span>
+                    {t("auth.resendCode") || "Resend code"}
                   </button>
                 )}
               </div>
@@ -458,16 +418,15 @@ export function LoginForm({
         </form>
       )}
 
-      {/* Terms and Privacy Footer */}
-      <FieldDescription className="px-4 text-center text-xs text-muted-foreground/80">
-        {t("auth.termsAgree") || "By signing in, you agree to our"}{" "}
-        <span className="underline underline-offset-4 cursor-pointer hover:text-foreground">
+      <FieldDescription className="px-6 text-center">
+        {t("auth.termsAgree") || "By clicking continue, you agree to our"}{" "}
+        <a href="#" onClick={(e) => e.preventDefault()}>
           {t("auth.termsOfService") || "Terms of Service"}
-        </span>{" "}
+        </a>{" "}
         {t("auth.and") || "and"}{" "}
-        <span className="underline underline-offset-4 cursor-pointer hover:text-foreground">
+        <a href="#" onClick={(e) => e.preventDefault()}>
           {t("auth.privacyPolicy") || "Privacy Policy"}
-        </span>
+        </a>
         .
       </FieldDescription>
     </div>

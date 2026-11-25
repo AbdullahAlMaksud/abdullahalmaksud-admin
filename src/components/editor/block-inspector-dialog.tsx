@@ -55,6 +55,10 @@ export function BlockInspectorDialog({
         return "bg-emerald-500/15 text-emerald-500 border-emerald-500/30";
       case "divider":
         return "bg-rose-500/15 text-rose-500 border-rose-500/30";
+      case "image":
+        return "bg-cyan-500/15 text-cyan-500 border-cyan-500/30";
+      case "table":
+        return "bg-indigo-500/15 text-indigo-500 border-indigo-500/30";
       default:
         return "bg-muted text-muted-foreground";
     }
@@ -145,7 +149,28 @@ export function BlockInspectorDialog({
                   <div className="text-xs font-mono text-foreground/90 bg-muted/40 p-2 rounded border border-border/50 break-words whitespace-pre-wrap max-h-32 overflow-y-auto">
                     {block.type === "code" && block.data?.code}
                     {block.type === "list" && (block.data?.items || []).join("\n• ")}
-                    {block.type !== "code" && block.type !== "list" && (block.data?.text || block.data?.markdown || "—")}
+                    {block.type === "image" && (
+                      <div className="space-y-0.5">
+                        <div>URL: {block.data?.url || "—"}</div>
+                        {block.data?.caption && <div>Caption: {block.data.caption}</div>}
+                        {block.data?.alt && <div>Alt: {block.data.alt}</div>}
+                      </div>
+                    )}
+                    {block.type === "table" && (
+                      <div className="space-y-0.5">
+                        <div>
+                          Headers: {(block.data?.headers || []).join(" | ") || "—"}
+                        </div>
+                        <div>
+                          Rows: {block.data?.rows?.length || 0} rows
+                        </div>
+                      </div>
+                    )}
+                    {block.type !== "code" &&
+                      block.type !== "list" &&
+                      block.type !== "image" &&
+                      block.type !== "table" &&
+                      (block.data?.text || block.data?.markdown || "—")}
                   </div>
                 </div>
               ))

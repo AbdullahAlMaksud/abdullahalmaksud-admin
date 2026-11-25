@@ -12,6 +12,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { apiClient } from "@/lib/api/client"
 import {
+  filterAssets,
+  normalizeAssetModule,
+  resolveAssetUrl,
+  sanitizeAssetKey,
+} from "@/lib/asset-url"
+import { AssetFolderPicker } from "@/components/ui/asset-folder-picker"
+import { AssetFolderFilter } from "@/components/ui/asset-folder-filter"
+import {
   IconCloud,
   IconCheck,
   IconLoader2,
@@ -35,8 +43,10 @@ export interface BlobItem {
 interface BlobMediaDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelect: (url: string) => void;
+  onSelect: (path: string) => void;
   currentValue?: string;
+  defaultModule?: string;
+  defaultFolderKey?: string;
 }
 
 export function BlobMediaDialog({
@@ -44,12 +54,20 @@ export function BlobMediaDialog({
   onOpenChange,
   onSelect,
   currentValue,
+  defaultModule = "general",
+  defaultFolderKey = "misc",
 }: BlobMediaDialogProps) {
   const [blobs, setBlobs] = useState<BlobItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-  const [deletingUrl, setDeletingUrl] = useState<string | null>(null)
+  const [deletingPath, setDeletingPath] = useState<string | null>(null)
+  const [uploadModule, setUploadModule] = useState(() => normalizeAssetModule(defaultModule))
+  const [uploadFolderKey, setUploadFolderKey] = useState(() =>
+    sanitizeAssetKey(defaultFolderKey, "misc"),
+  )
+  const [moduleFilter, setModuleFilter] = useState("all")
+  const [folderFilter, setFolderFilter] = useState("all")
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const fetchBlobs = async () => {
@@ -62,7 +80,7 @@ export function BlobMediaDialog({
         setBlobs([])
       }
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : "Failed to load Vercel Blob storage"
+      const msg = error instanceof Error ? error.message : "Failed to load GitHub Assets library"
       toast.error(msg)
     } finally {
       setIsLoading(false)
@@ -71,9 +89,11 @@ export function BlobMediaDialog({
 
   useEffect(() => {
     if (open) {
+      setUploadModule(normalizeAssetModule(defaultModule))
+      setUploadFolderKey(sanitizeAssetKey(defaultFolderKey, "misc"))
       fetchBlobs()
     }
-  }, [open])
+  }, [open, defaultModule, defaultFolderKey])
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -86,10 +106,14 @@ export function BlobMediaDialog({
 
     try {
       setIsUploading(true)
-      const uploadedUrl = await apiClient.upload(file)
-      toast.success("Image uploaded to Vercel Blob!")
+      const uploadedPath = await apiClient.upload(
+        file,
+        normalizeAssetModule(uploadModule),
+        sanitizeAssetKey(uploadFolderKey, "misc"),
+      )
+      toast.success(`Uploaded to ${uploadedPath}`)
       await fetchBlobs()
-      onSelect(uploadedUrl)
+      onSelect(uploadedPath)
       onOpenChange(false)
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : "Failed to upload image"
@@ -102,25 +126,25 @@ export function BlobMediaDialog({
     }
   }
 
-  const handleDelete = async (url: string, e: React.MouseEvent) => {
+  const handleDelete = async (pathname: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    if (!window.confirm("Are you sure you want to delete this file from Vercel Blob?")) {
+    if (!window.confirm("Are you sure you want to delete this file from GitHub Assets?")) {
       return
     }
 
     try {
-      setDeletingUrl(url)
-      await apiClient.deleteBlob(url)
-      toast.success("File deleted from Vercel Blob")
-      setBlobs((prev) => prev.filter((b) => b.url !== url))
-      if (currentValue === url) {
+      setDeletingPath(pathname)
+      await apiClient.deleteBlob(pathname)
+      toast.success("File deleted from GitHub Assets")
+      setBlobs((prev) => prev.filter((b) => b.pathname !== pathname))
+      if (currentValue === pathname) {
         onSelect("")
       }
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : "Failed to delete file"
       toast.error(msg)
     } finally {
-      setDeletingUrl(null)
+      setDeletingPath(null)
     }
   }
 
@@ -132,10 +156,10 @@ export function BlobMediaDialog({
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
   }
 
-  const filteredBlobs = blobs.filter((blob) => {
-    const query = searchQuery.toLowerCase().trim()
-    if (!query) return true
-    return blob.pathname.toLowerCase().includes(query) || blob.url.toLowerCase().includes(query)
+  const filteredBlobs = filterAssets(blobs, {
+    moduleFilter,
+    folderFilter,
+    searchQuery,
   })
 
   return (
@@ -149,10 +173,10 @@ export function BlobMediaDialog({
               </div>
               <div>
                 <DialogTitle className="text-base font-semibold">
-                  Vercel Blob Media Library
+                  GitHub Assets Media Library
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground">
-                  Browse, select, or upload images stored in Vercel Blob CDN.
+                  Browse, select, or upload images stored in your GitHub Assets repository.
                 </DialogDescription>
               </div>
             </div>
@@ -187,32 +211,53 @@ export function BlobMediaDialog({
                 onClick={fetchBlobs}
                 disabled={isLoading}
                 className="h-8 w-8 p-0"
-                title="Refresh Blobs"
+                title="Refresh Assets"
               >
                 <IconRefresh className={`size-3.5 ${isLoading ? "animate-spin" : ""}`} />
               </Button>
             </div>
           </div>
 
-          <div className="pt-3">
-            <div className="relative">
-              <IconSearch className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search images by filename..."
-                className="pl-9 h-8 text-xs"
+          <div className="pt-3 space-y-2.5">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div className="relative flex-1">
+                <IconSearch className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search images by path or filename..."
+                  className="pl-9 h-8 text-xs"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <IconX className="size-3.5" />
+                  </button>
+                )}
+              </div>
+
+              <AssetFolderFilter
+                compact
+                items={blobs}
+                moduleFilter={moduleFilter}
+                folderFilter={folderFilter}
+                onModuleFilterChange={setModuleFilter}
+                onFolderFilterChange={setFolderFilter}
               />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <IconX className="size-3.5" />
-                </button>
-              )}
             </div>
+
+            <AssetFolderPicker
+              compact
+              module={uploadModule}
+              folderKey={uploadFolderKey}
+              onModuleChange={setUploadModule}
+              onFolderKeyChange={setUploadFolderKey}
+              existingPaths={blobs}
+              disabled={isUploading}
+            />
           </div>
         </DialogHeader>
 
@@ -221,7 +266,7 @@ export function BlobMediaDialog({
           {isLoading && blobs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-2">
               <IconLoader2 className="size-8 animate-spin text-primary" />
-              <p className="text-xs">Loading files from Vercel Blob...</p>
+              <p className="text-xs">Loading files from GitHub Assets...</p>
             </div>
           ) : filteredBlobs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground gap-3">
@@ -235,7 +280,7 @@ export function BlobMediaDialog({
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {searchQuery
                     ? "Try a different search term"
-                    : "Upload your first image directly to Vercel Blob"}
+                    : "Upload your first image directly to GitHub Assets"}
                 </p>
               </div>
               <Button
@@ -251,16 +296,17 @@ export function BlobMediaDialog({
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {filteredBlobs.map((blob) => {
-                const isSelected = currentValue === blob.url
-                const isDeleting = deletingUrl === blob.url
+                const previewUrl = resolveAssetUrl(blob.pathname)
+                const isSelected = currentValue === blob.pathname
+                const isDeleting = deletingPath === blob.pathname
 
                 return (
                   <div
-                    key={blob.url}
+                    key={blob.pathname}
                     onClick={() => {
-                      onSelect(blob.url)
+                      onSelect(blob.pathname)
                       onOpenChange(false)
-                      toast.success("Image selected from Vercel Blob!")
+                      toast.success("Image selected from GitHub Assets!")
                     }}
                     className={`group relative rounded-xl border overflow-hidden cursor-pointer transition-all hover:border-primary/50 hover:shadow-md bg-card flex flex-col justify-between ${
                       isSelected
@@ -271,7 +317,7 @@ export function BlobMediaDialog({
                     <div className="aspect-square relative w-full bg-muted/40 overflow-hidden flex items-center justify-center">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={blob.url}
+                        src={previewUrl}
                         alt={blob.pathname}
                         className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
                         loading="lazy"
@@ -286,9 +332,9 @@ export function BlobMediaDialog({
                       )}
                       <button
                         type="button"
-                        onClick={(e) => handleDelete(blob.url, e)}
+                        onClick={(e) => handleDelete(blob.pathname, e)}
                         disabled={isDeleting}
-                        title="Delete from Vercel Blob"
+                        title="Delete from GitHub Assets"
                         className="absolute top-2 right-2 size-6 rounded-full bg-background/80 hover:bg-destructive hover:text-destructive-foreground text-muted-foreground flex items-center justify-center backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-all shadow-xs"
                       >
                         {isDeleting ? (
@@ -317,7 +363,7 @@ export function BlobMediaDialog({
 
         {/* Footer info */}
         <div className="pt-3 border-t flex items-center justify-between text-xs text-muted-foreground">
-          <span>{filteredBlobs.length} {filteredBlobs.length === 1 ? "file" : "files"} in Vercel Blob</span>
+          <span>{filteredBlobs.length} {filteredBlobs.length === 1 ? "file" : "files"} in GitHub Assets</span>
           <Button
             type="button"
             variant="ghost"
