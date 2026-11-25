@@ -218,7 +218,13 @@
     "saveProfile": "Update Profile",
     "saveSeo": "Save SEO Settings",
     "profileSaved": "Profile settings saved successfully.",
-    "seoSaved": "SEO and site configuration updated successfully."
+    "seoSaved": "SEO and site configuration updated successfully.",
+    "webSiteTab": "Web & Localization",
+    "aboutTab": "About Page",
+    "webSiteTitle": "Web Portal & Localization (EN / BN)",
+    "webSiteDesc": "Control all public website copy, navigation, advisory, contact details, SEO, and localized JSON directly from the database.",
+    "siteSaved": "Web portal localization saved to server!",
+    "invalidJsonError": "Fix JSON syntax errors before switching mode."
   },
   "caseStudies": {
     "title": "Architecture Case Studies",

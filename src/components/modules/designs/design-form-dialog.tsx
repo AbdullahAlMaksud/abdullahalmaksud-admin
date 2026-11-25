@@ -206,6 +206,17 @@ function DesignFormInner({
         value={coverImage}
         onChange={setCoverImage}
         placeholder="/images/designs/byou.webp"
+        module="design"
+        folderKey={
+          design?.id ||
+          (title
+            ? title
+                .toLowerCase()
+                .replace(/[^a-z0-9_-]/g, "-")
+                .replace(/-{2,}/g, "-")
+                .replace(/^-|-$/g, "")
+            : "draft")
+        }
       />
 
       {/* Tools */}

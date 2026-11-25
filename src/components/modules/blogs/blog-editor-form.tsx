@@ -414,6 +414,8 @@ export function BlogEditorForm({
                 onChange={setCoverImage}
                 label="Cover Image"
                 placeholder="Upload or paste image URL"
+                module="blog"
+                folderKey={slug || "draft"}
               />
             </CardContent>
           </Card>

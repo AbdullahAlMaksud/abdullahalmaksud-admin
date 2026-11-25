@@ -188,6 +188,8 @@ function BookFormInner({
         value={coverImage}
         onChange={setCoverImage}
         placeholder="/images/books/cover.png"
+        module="book"
+        folderKey={slug || "draft"}
       />
 
       {/* Rating & Read Date */}

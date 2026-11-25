@@ -181,6 +181,8 @@ function BlogFormInner({
         value={coverImage}
         onChange={setCoverImage}
         placeholder="/images/blog/cover.png"
+        module="blog"
+        folderKey={slug || "draft"}
       />
 
       {/* Tags */}

@@ -23,6 +23,8 @@ interface ImageUploadProps {
   label?: string
   placeholder?: string
   disabled?: boolean
+  module?: string
+  folderKey?: string
 }
 
 export function ImageUpload({
@@ -31,6 +33,8 @@ export function ImageUpload({
   label = "Cover Image",
   placeholder = "https://... or upload a file",
   disabled = false,
+  module = "general",
+  folderKey = "misc",
 }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [showUrlInput, setShowUrlInput] = useState(false)
@@ -54,7 +58,7 @@ export function ImageUpload({
 
     try {
       setIsUploading(true)
-      const uploadedUrl = await apiClient.upload(file)
+      const uploadedUrl = await apiClient.upload(file, module, folderKey)
       onChange(uploadedUrl)
       setImageError(false)
       toast.success("Image uploaded to Vercel Blob successfully!")

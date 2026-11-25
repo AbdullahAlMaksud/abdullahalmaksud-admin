@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import { AppSidebar } from "@/components/dashboard-01/components/app-sidebar"
 import { SiteHeader } from "@/components/dashboard-01/components/site-header"
@@ -11,22 +11,45 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ImageUpload } from "@/components/ui/image-upload"
-import { getHomeData, updateHomeData, getAboutData, updateAboutData } from "@/lib/api/site"
+import { SiteLocalizationEditor } from "@/components/modules/settings/site-localization-editor"
+import { getAboutData, updateAboutData } from "@/lib/api/site"
 import { getCurrentUser, updateProfile } from "@/lib/api/auth"
 import { useAuth } from "@/components/auth/auth-provider"
+import type { AboutData, AboutPillar, AboutPrinciple, SupportedLocale } from "@/lib/api/types"
 import {
   IconCheck,
   IconUser,
-  IconSeo,
-  IconHome,
+  IconLanguage,
   IconInfoCircle,
   IconLoader2,
   IconServer,
   IconBolt,
+  IconPlus,
+  IconTrash,
 } from "@tabler/icons-react"
 import { getHealthStatus } from "@/lib/api/dashboard"
 import { API_BASE_URL } from "@/lib/api/client"
 import { toast } from "sonner"
+
+const createEmptyAbout = (locale: SupportedLocale): AboutData => ({
+  locale,
+  header: {
+    badge: locale === "bn" ? "জীবনবৃত্তান্ত ও পরিচিতি" : "Biography & Curriculum Vitae",
+    name: locale === "bn" ? "আব্দুল্লাহ আল মাকসুদ" : "Abdullah Al Maksud",
+    role:
+      locale === "bn"
+        ? "ফ্রন্টএন্ড ইঞ্জিনিয়ার · লেখালেখি · অনুবাদ · ডিজাইন"
+        : "Frontend Engineer · Writing · Translation · Design",
+    headline: "",
+    intro: "",
+    bioSecondary: "",
+    signature: locale === "bn" ? "মাকসুদ" : "Maksud",
+    experienceYears: "",
+    cvUrl: "/CV-of-Abdullah-Al-Maksud.pdf",
+  },
+  pillars: [],
+  principles: [],
+})
 
 export default function SettingsPage() {
   const { t } = useTranslation()
@@ -35,48 +58,21 @@ export default function SettingsPage() {
   // Tab: Profile
   const [profile, setProfile] = useState({
     name: "Abdullah Al Maksud",
-    title: "Senior Software Architect & Author",
+    title: "Frontend Engineer & Writer",
     email: "contact@abdullahalmaksud.com",
     website: "https://abdullahalmaksud.com",
     github: "https://github.com/abdullahalmaksud",
-    bio: "Full-stack developer, writer, and instructor specializing in Next.js, React, Node.js, and Software System Architecture.",
+    bio: "Frontend engineer, writer, and translator.",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Abdullah",
   })
 
-  // Tab: Dynamic Home Content
-  const [home, setHome] = useState({
-    greeting: "Hello, I'm",
-    firstName: "Maksud",
-    subtitlePrefix: "I build digital experiences that are ",
-    subtitleHighlight: "fast, clean & meaningful.",
-    exploreText: "EXPLORE MY WORLD",
-    portraitImage: "/images/portrait.png",
-    quoteText: "Code is like humor. When you have to explain it, it's bad.",
-    quoteAuthor: "Cory House",
-    quoteAuthorTitle: "Software Architect",
-  })
-
-  // Tab: Dynamic About Content
-  const [about, setAbout] = useState({
-    badge: "ABOUT ME",
-    headline: "Curious mind. Creative soul. Code in hand.",
-    intro: "Hello! I'm Abdullah Al Maksud, a software engineer and author dedicated to building resilient distributed systems and crafting delightful user interfaces.",
-    signature: "Maksud",
-    experienceYears: "5+ Years Experience",
-  })
-
-  // Tab: SEO
-  const [seo, setSeo] = useState({
-    siteName: "Abdullah Al Maksud - Official Portal",
-    defaultTitle: "Abdullah Al Maksud | Software Architect & Author",
-    description: "Personal admin dashboard for managing books, portfolio projects, technical articles, and graphic designs.",
-    keywords: "Abdullah Al Maksud, Software Architecture, Next.js, Books, Tech Articles, Portfolio",
-    analyticsId: "G-ABDULLAH2026",
-  })
+  // Tab: About (EN / BN)
+  const [aboutLocale, setAboutLocale] = useState<SupportedLocale>("en")
+  const [aboutData, setAboutData] = useState<AboutData>(() => createEmptyAbout("en"))
+  const [isLoadingAbout, setIsLoadingAbout] = useState(false)
+  const [isSavingAbout, setIsSavingAbout] = useState(false)
 
   const [isLoading, setIsLoading] = useState(false)
-  const [isSavingHome, setIsSavingHome] = useState(false)
-  const [isSavingAbout, setIsSavingAbout] = useState(false)
   const [isSavingProfile, setIsSavingProfile] = useState(false)
 
   // Tab: Cache & Diagnostics
@@ -94,47 +90,46 @@ export default function SettingsPage() {
     database: { isConnected: true, state: "connected" },
   })
 
+  const loadAbout = useCallback(async (locale: SupportedLocale) => {
+    try {
+      setIsLoadingAbout(true)
+      const res = await getAboutData(locale)
+      if (res) {
+        setAboutData({
+          locale,
+          header: {
+            badge: res.header?.badge || "",
+            name: res.header?.name || "",
+            role: res.header?.role || "",
+            headline: res.header?.headline || "",
+            intro: res.header?.intro || "",
+            bioSecondary: res.header?.bioSecondary || "",
+            signature: res.header?.signature || "",
+            experienceYears: res.header?.experienceYears || "",
+            cvUrl: res.header?.cvUrl || "/CV-of-Abdullah-Al-Maksud.pdf",
+          },
+          pillars: Array.isArray(res.pillars) ? res.pillars : [],
+          principles: Array.isArray(res.principles) ? res.principles : [],
+        })
+      }
+    } catch (error) {
+      console.error("Failed to load about data:", error)
+    } finally {
+      setIsLoadingAbout(false)
+    }
+  }, [])
+
   useEffect(() => {
     async function loadData() {
       try {
         setIsLoading(true)
-        const [homeRes, aboutRes, userRes, healthRes] = await Promise.allSettled([
-          getHomeData(),
-          getAboutData(),
+        const [userRes, healthRes] = await Promise.allSettled([
           getCurrentUser(),
           getHealthStatus(),
         ])
 
         if (healthRes.status === "fulfilled" && healthRes.value?.data) {
           setServerHealth(healthRes.value.data)
-        }
-
-        if (homeRes.status === "fulfilled" && homeRes.value) {
-          const h = homeRes.value
-          setHome((prev) => ({
-            ...prev,
-            greeting: h.hero?.greeting || prev.greeting,
-            firstName: h.hero?.firstName || prev.firstName,
-            subtitlePrefix: h.hero?.subtitlePrefix || prev.subtitlePrefix,
-            subtitleHighlight: h.hero?.subtitleHighlight || prev.subtitleHighlight,
-            exploreText: h.hero?.exploreText || prev.exploreText,
-            portraitImage: h.hero?.portraitImage || prev.portraitImage,
-            quoteText: h.quote?.text || prev.quoteText,
-            quoteAuthor: h.quote?.author || prev.quoteAuthor,
-            quoteAuthorTitle: h.quote?.authorTitle || prev.quoteAuthorTitle,
-          }))
-        }
-
-        if (aboutRes.status === "fulfilled" && aboutRes.value) {
-          const a = aboutRes.value
-          setAbout((prev) => ({
-            ...prev,
-            badge: a.header?.badge || prev.badge,
-            headline: a.header?.headline || prev.headline,
-            intro: a.header?.intro || prev.intro,
-            signature: a.header?.signature || prev.signature,
-            experienceYears: a.header?.experienceYears || prev.experienceYears,
-          }))
         }
 
         if (userRes.status === "fulfilled" && userRes.value?.data?.user) {
@@ -147,14 +142,20 @@ export default function SettingsPage() {
           }))
         }
       } catch (error: unknown) {
-        console.error("Failed to load initial site settings:", error)
+        console.error("Failed to load initial settings:", error)
       } finally {
         setIsLoading(false)
       }
     }
 
     loadData()
-  }, [])
+    loadAbout("en")
+  }, [loadAbout])
+
+  const handleAboutLocaleChange = (locale: SupportedLocale) => {
+    setAboutLocale(locale)
+    loadAbout(locale)
+  }
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -174,49 +175,12 @@ export default function SettingsPage() {
     }
   }
 
-  const handleSaveHome = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      setIsSavingHome(true)
-      await updateHomeData({
-        hero: {
-          greeting: home.greeting,
-          firstName: home.firstName,
-          subtitlePrefix: home.subtitlePrefix,
-          subtitleHighlight: home.subtitleHighlight,
-          exploreText: home.exploreText,
-          portraitImage: home.portraitImage,
-          portraitAlt: `${home.greeting} ${home.firstName}`,
-        },
-        quote: {
-          text: home.quoteText,
-          author: home.quoteAuthor,
-          authorTitle: home.quoteAuthorTitle,
-        },
-      })
-      toast.success("Home page content updated live on server!")
-    } catch (error: unknown) {
-      const errMsg = error instanceof Error ? error.message : "Failed to update home content"
-      toast.error(errMsg)
-    } finally {
-      setIsSavingHome(false)
-    }
-  }
-
   const handleSaveAbout = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
       setIsSavingAbout(true)
-      await updateAboutData({
-        header: {
-          badge: about.badge,
-          headline: about.headline,
-          intro: about.intro,
-          signature: about.signature,
-          experienceYears: about.experienceYears,
-        },
-      })
-      toast.success("About page content updated live on server!")
+      await updateAboutData(aboutData, aboutLocale)
+      toast.success(`About page content (${aboutLocale.toUpperCase()}) updated live on server!`)
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : "Failed to update about content"
       toast.error(errMsg)
@@ -225,9 +189,18 @@ export default function SettingsPage() {
     }
   }
 
-  const handleSaveSeo = (e: React.FormEvent) => {
-    e.preventDefault()
-    toast.success(t("settings.seoSaved") || "SEO settings saved successfully.")
+  const updatePillar = (idx: number, patch: Partial<AboutPillar>) => {
+    setAboutData((prev) => ({
+      ...prev,
+      pillars: prev.pillars.map((p, i) => (i === idx ? { ...p, ...patch } : p)),
+    }))
+  }
+
+  const updatePrinciple = (idx: number, patch: Partial<AboutPrinciple>) => {
+    setAboutData((prev) => ({
+      ...prev,
+      principles: (prev.principles || []).map((p, i) => (i === idx ? { ...p, ...patch } : p)),
+    }))
   }
 
   const handleTriggerRevalidation = async (e: React.FormEvent) => {
@@ -256,6 +229,9 @@ export default function SettingsPage() {
     }
   }
 
+  const dbConnected =
+    serverHealth.database?.isConnected ?? serverHealth.database?.state === "connected"
+
   return (
     <SidebarProvider
       style={
@@ -268,31 +244,25 @@ export default function SettingsPage() {
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
-        <div className="flex flex-1 flex-col p-4 lg:p-6 gap-6 max-w-5xl">
+        <div className="flex max-w-5xl flex-1 flex-col gap-6 p-4 lg:p-6">
           <div>
             <h2 className="text-2xl font-bold tracking-tight">{t("settings.title")}</h2>
-            <p className="text-sm text-muted-foreground">
-              {t("settings.subtitle")}
-            </p>
+            <p className="text-sm text-muted-foreground">{t("settings.subtitle")}</p>
           </div>
 
-          <Tabs defaultValue="home" className="w-full">
-            <TabsList className="grid w-full sm:w-[700px] grid-cols-5">
-              <TabsTrigger value="home" className="flex items-center gap-1.5 text-xs">
-                <IconHome className="size-3.5" />
-                <span>Home Page</span>
+          <Tabs defaultValue="site" className="w-full">
+            <TabsList className="grid w-full grid-cols-4 sm:w-[620px]">
+              <TabsTrigger value="site" className="flex items-center gap-1.5 text-xs">
+                <IconLanguage className="size-3.5" />
+                <span>{t("settings.webSiteTab") || "Web & Localization"}</span>
               </TabsTrigger>
               <TabsTrigger value="about" className="flex items-center gap-1.5 text-xs">
                 <IconInfoCircle className="size-3.5" />
-                <span>About Page</span>
+                <span>{t("settings.aboutTab") || "About Page"}</span>
               </TabsTrigger>
               <TabsTrigger value="profile" className="flex items-center gap-1.5 text-xs">
                 <IconUser className="size-3.5" />
-                <span>Profile</span>
-              </TabsTrigger>
-              <TabsTrigger value="seo" className="flex items-center gap-1.5 text-xs">
-                <IconSeo className="size-3.5" />
-                <span>SEO</span>
+                <span>{t("settings.profileTab") || "Profile"}</span>
               </TabsTrigger>
               <TabsTrigger value="cache" className="flex items-center gap-1.5 text-xs">
                 <IconServer className="size-3.5" />
@@ -300,213 +270,320 @@ export default function SettingsPage() {
               </TabsTrigger>
             </TabsList>
 
-            {/* Dynamic Home Page Content Tab */}
-            <TabsContent value="home" className="mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Dynamic Home Page Content</CardTitle>
-                  <CardDescription>
-                    Configure the Hero greeting, highlighted taglines, author portrait, and inspiring quote shown on the home page.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleSaveHome} className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="home-greeting">Greeting Prefix</Label>
-                        <Input
-                          id="home-greeting"
-                          value={home.greeting}
-                          onChange={(e) => setHome({ ...home, greeting: e.target.value })}
-                          placeholder="Hello, I'm"
-                          disabled={isLoading}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="home-name">Hero First Name / Display Name</Label>
-                        <Input
-                          id="home-name"
-                          value={home.firstName}
-                          onChange={(e) => setHome({ ...home, firstName: e.target.value })}
-                          placeholder="Maksud"
-                          disabled={isLoading}
-                        />
-                      </div>
-
-                      <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="home-subtitle-prefix">Subtitle Prefix</Label>
-                        <Input
-                          id="home-subtitle-prefix"
-                          value={home.subtitlePrefix}
-                          onChange={(e) => setHome({ ...home, subtitlePrefix: e.target.value })}
-                          placeholder="I build digital experiences that are"
-                          disabled={isLoading}
-                        />
-                      </div>
-
-                      <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="home-subtitle-highlight">Subtitle Highlight / Tagline</Label>
-                        <Input
-                          id="home-subtitle-highlight"
-                          value={home.subtitleHighlight}
-                          onChange={(e) => setHome({ ...home, subtitleHighlight: e.target.value })}
-                          placeholder="fast, clean & meaningful."
-                          disabled={isLoading}
-                        />
-                      </div>
-
-                      <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="home-explore">Explore Button CTA</Label>
-                        <Input
-                          id="home-explore"
-                          value={home.exploreText}
-                          onChange={(e) => setHome({ ...home, exploreText: e.target.value })}
-                          placeholder="EXPLORE MY WORLD"
-                          disabled={isLoading}
-                        />
-                      </div>
-
-                      <div className="sm:col-span-2">
-                        <ImageUpload
-                          label="Author Portrait Image"
-                          value={home.portraitImage}
-                          onChange={(url) => setHome({ ...home, portraitImage: url })}
-                          placeholder="/images/portrait.png"
-                          disabled={isLoading}
-                        />
-                      </div>
-
-                      <div className="space-y-2 sm:col-span-2 border-t pt-4">
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                          Inspirational Quote Section
-                        </h4>
-                        <Label htmlFor="quote-text">Quote Text</Label>
-                        <Input
-                          id="quote-text"
-                          value={home.quoteText}
-                          onChange={(e) => setHome({ ...home, quoteText: e.target.value })}
-                          placeholder="Code is like humor. When you have to explain it, it's bad."
-                          disabled={isLoading}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="quote-author">Quote Author</Label>
-                        <Input
-                          id="quote-author"
-                          value={home.quoteAuthor}
-                          onChange={(e) => setHome({ ...home, quoteAuthor: e.target.value })}
-                          placeholder="Cory House"
-                          disabled={isLoading}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="quote-author-title">Author Subtitle / Role</Label>
-                        <Input
-                          id="quote-author-title"
-                          value={home.quoteAuthorTitle}
-                          onChange={(e) => setHome({ ...home, quoteAuthorTitle: e.target.value })}
-                          placeholder="Software Architect"
-                          disabled={isLoading}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="pt-4 flex justify-end">
-                      <Button type="submit" disabled={isSavingHome || isLoading} className="flex items-center gap-1.5">
-                        {isSavingHome ? (
-                          <IconLoader2 className="size-4 animate-spin" />
-                        ) : (
-                          <IconCheck className="size-4" />
-                        )}
-                        <span>Save Home Content</span>
-                      </Button>
-                    </div>
-                  </form>
-                </CardContent>
-              </Card>
+            {/* Web Portal Site Config & Editable EN/BN JSON */}
+            <TabsContent value="site" className="mt-4">
+              <SiteLocalizationEditor />
             </TabsContent>
 
-            {/* Dynamic About Page Content Tab */}
+            {/* Dynamic About Page Content Tab (EN / BN) */}
             <TabsContent value="about" className="mt-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Dynamic About Page Content</CardTitle>
-                  <CardDescription>
-                    Manage the About header badge, headline, introductory story, experience badges, and signature.
-                  </CardDescription>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <CardTitle>About Page Content ({aboutLocale.toUpperCase()})</CardTitle>
+                      <CardDescription>
+                        Manage the public About page biography, CV link, disciplines, and principles
+                        per language.
+                      </CardDescription>
+                    </div>
+                    <div className="inline-flex rounded-md border bg-muted p-0.5">
+                      {(["en", "bn"] as const).map((loc) => (
+                        <button
+                          key={loc}
+                          type="button"
+                          onClick={() => handleAboutLocaleChange(loc)}
+                          className={`rounded-sm px-3 py-1 text-xs font-semibold uppercase transition-colors ${
+                            aboutLocale === loc
+                              ? "bg-background text-foreground shadow-xs"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          {loc === "en" ? "English (EN)" : "বাংলা (BN)"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={handleSaveAbout} className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <form onSubmit={handleSaveAbout} className="space-y-6">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="about-name">Display Name</Label>
+                        <Input
+                          id="about-name"
+                          value={aboutData.header.name || ""}
+                          onChange={(e) =>
+                            setAboutData((prev) => ({
+                              ...prev,
+                              header: { ...prev.header, name: e.target.value },
+                            }))
+                          }
+                          disabled={isLoadingAbout}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="about-role">Role Subtitle</Label>
+                        <Input
+                          id="about-role"
+                          value={aboutData.header.role || ""}
+                          onChange={(e) =>
+                            setAboutData((prev) => ({
+                              ...prev,
+                              header: { ...prev.header, role: e.target.value },
+                            }))
+                          }
+                          disabled={isLoadingAbout}
+                        />
+                      </div>
+
                       <div className="space-y-2">
                         <Label htmlFor="about-badge">Header Badge Text</Label>
                         <Input
                           id="about-badge"
-                          value={about.badge}
-                          onChange={(e) => setAbout({ ...about, badge: e.target.value })}
-                          placeholder="ABOUT ME"
-                          disabled={isLoading}
+                          value={aboutData.header.badge}
+                          onChange={(e) =>
+                            setAboutData((prev) => ({
+                              ...prev,
+                              header: { ...prev.header, badge: e.target.value },
+                            }))
+                          }
+                          disabled={isLoadingAbout}
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="about-exp">Experience Highlight</Label>
+                        <Label htmlFor="about-cv">Resume / CV PDF URL</Label>
                         <Input
-                          id="about-exp"
-                          value={about.experienceYears}
-                          onChange={(e) => setAbout({ ...about, experienceYears: e.target.value })}
-                          placeholder="5+ Years Experience"
-                          disabled={isLoading}
+                          id="about-cv"
+                          value={aboutData.header.cvUrl || ""}
+                          onChange={(e) =>
+                            setAboutData((prev) => ({
+                              ...prev,
+                              header: { ...prev.header, cvUrl: e.target.value },
+                            }))
+                          }
+                          disabled={isLoadingAbout}
                         />
                       </div>
 
                       <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="about-headline">Main Headline</Label>
+                        <Label htmlFor="about-headline">Headline</Label>
                         <Input
                           id="about-headline"
-                          value={about.headline}
-                          onChange={(e) => setAbout({ ...about, headline: e.target.value })}
-                          placeholder="Curious mind. Creative soul. Code in hand."
-                          disabled={isLoading}
+                          value={aboutData.header.headline}
+                          onChange={(e) =>
+                            setAboutData((prev) => ({
+                              ...prev,
+                              header: { ...prev.header, headline: e.target.value },
+                            }))
+                          }
+                          disabled={isLoadingAbout}
                         />
                       </div>
 
                       <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="about-intro">Intro Story / Biography</Label>
+                        <Label htmlFor="about-intro">Primary Biography</Label>
                         <textarea
                           id="about-intro"
-                          value={about.intro}
-                          onChange={(e) => setAbout({ ...about, intro: e.target.value })}
-                          rows={4}
+                          value={aboutData.header.intro}
+                          onChange={(e) =>
+                            setAboutData((prev) => ({
+                              ...prev,
+                              header: { ...prev.header, intro: e.target.value },
+                            }))
+                          }
+                          rows={3}
                           className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-xs focus:outline-none focus:ring-2 focus:ring-primary"
-                          placeholder="Hello! I'm Abdullah Al Maksud..."
-                          disabled={isLoading}
+                          disabled={isLoadingAbout}
                         />
                       </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="about-sig">Signature Text</Label>
-                        <Input
-                          id="about-sig"
-                          value={about.signature}
-                          onChange={(e) => setAbout({ ...about, signature: e.target.value })}
-                          placeholder="Maksud"
-                          disabled={isLoading}
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label htmlFor="about-bio2">Secondary Biography Paragraph</Label>
+                        <textarea
+                          id="about-bio2"
+                          value={aboutData.header.bioSecondary || ""}
+                          onChange={(e) =>
+                            setAboutData((prev) => ({
+                              ...prev,
+                              header: { ...prev.header, bioSecondary: e.target.value },
+                            }))
+                          }
+                          rows={2}
+                          className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-xs focus:outline-none focus:ring-2 focus:ring-primary"
+                          disabled={isLoadingAbout}
                         />
                       </div>
                     </div>
 
-                    <div className="pt-4 flex justify-end">
-                      <Button type="submit" disabled={isSavingAbout || isLoading} className="flex items-center gap-1.5">
+                    {/* Disciplines / Pillars */}
+                    <div className="space-y-3 border-t pt-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                          Core Disciplines / Pillars
+                        </h4>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            setAboutData((prev) => ({
+                              ...prev,
+                              pillars: [
+                                ...prev.pillars,
+                                {
+                                  id: `pillar-${prev.pillars.length + 1}`,
+                                  tag: `0${prev.pillars.length + 1} / Discipline`,
+                                  title: "",
+                                  subtitle: "",
+                                  icon: "code",
+                                  description: "",
+                                  skills: [],
+                                },
+                              ],
+                            }))
+                          }
+                        >
+                          <IconPlus className="mr-1 size-3.5" />
+                          Add Discipline
+                        </Button>
+                      </div>
+
+                      <div className="space-y-3">
+                        {aboutData.pillars.map((pillar, idx) => (
+                          <div key={idx} className="space-y-2 rounded-md border p-3">
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-12">
+                              <Input
+                                className="sm:col-span-4"
+                                value={pillar.tag}
+                                onChange={(e) => updatePillar(idx, { tag: e.target.value })}
+                                placeholder="01 / Frontend Engineering"
+                              />
+                              <Input
+                                className="sm:col-span-4"
+                                value={pillar.title}
+                                onChange={(e) => updatePillar(idx, { title: e.target.value })}
+                                placeholder="Title"
+                              />
+                              <Input
+                                className="sm:col-span-3"
+                                value={pillar.subtitle || ""}
+                                onChange={(e) => updatePillar(idx, { subtitle: e.target.value })}
+                                placeholder="Subtitle"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="sm:col-span-1"
+                                onClick={() =>
+                                  setAboutData((prev) => ({
+                                    ...prev,
+                                    pillars: prev.pillars.filter((_, i) => i !== idx),
+                                  }))
+                                }
+                              >
+                                <IconTrash className="size-4 text-destructive" />
+                              </Button>
+                            </div>
+                            <textarea
+                              rows={2}
+                              value={pillar.description}
+                              onChange={(e) => updatePillar(idx, { description: e.target.value })}
+                              placeholder="Description"
+                              className="w-full rounded-md border bg-background px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Principles */}
+                    <div className="space-y-3 border-t pt-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                          Core Principles
+                        </h4>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            setAboutData((prev) => ({
+                              ...prev,
+                              principles: [
+                                ...(prev.principles || []),
+                                {
+                                  number: `0${(prev.principles || []).length + 1}`,
+                                  title: "",
+                                  description: "",
+                                },
+                              ],
+                            }))
+                          }
+                        >
+                          <IconPlus className="mr-1 size-3.5" />
+                          Add Principle
+                        </Button>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {(aboutData.principles || []).map((pr, idx) => (
+                          <div key={idx} className="space-y-2 rounded-md border p-3">
+                            <div className="flex items-center gap-2">
+                              <Input
+                                className="w-16"
+                                value={pr.number}
+                                onChange={(e) => updatePrinciple(idx, { number: e.target.value })}
+                                placeholder="01"
+                              />
+                              <Input
+                                value={pr.title}
+                                onChange={(e) => updatePrinciple(idx, { title: e.target.value })}
+                                placeholder="Principle Title"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                  setAboutData((prev) => ({
+                                    ...prev,
+                                    principles: (prev.principles || []).filter((_, i) => i !== idx),
+                                  }))
+                                }
+                              >
+                                <IconTrash className="size-4 text-destructive" />
+                              </Button>
+                            </div>
+                            <textarea
+                              rows={2}
+                              value={pr.description}
+                              onChange={(e) =>
+                                updatePrinciple(idx, { description: e.target.value })
+                              }
+                              placeholder="Principle description"
+                              className="w-full rounded-md border bg-background px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end pt-2">
+                      <Button
+                        type="submit"
+                        disabled={isSavingAbout || isLoadingAbout}
+                        className="flex items-center gap-1.5"
+                      >
                         {isSavingAbout ? (
                           <IconLoader2 className="size-4 animate-spin" />
                         ) : (
                           <IconCheck className="size-4" />
                         )}
-                        <span>Save About Content</span>
+                        <span>Save About ({aboutLocale.toUpperCase()})</span>
                       </Button>
                     </div>
                   </form>
@@ -519,13 +596,11 @@ export default function SettingsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>{t("settings.profileTitle")}</CardTitle>
-                  <CardDescription>
-                    {t("settings.profileDesc")}
-                  </CardDescription>
+                  <CardDescription>{t("settings.profileDesc")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSaveProfile} className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="space-y-2 sm:col-span-2">
                         <ImageUpload
                           label="Profile Avatar Photo"
@@ -571,28 +646,14 @@ export default function SettingsPage() {
                           onChange={(e) => setProfile({ ...profile, website: e.target.value })}
                         />
                       </div>
-
-                      <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="prof-github">{t("settings.formGithub")}</Label>
-                        <Input
-                          id="prof-github"
-                          value={profile.github}
-                          onChange={(e) => setProfile({ ...profile, github: e.target.value })}
-                        />
-                      </div>
-
-                      <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="prof-bio">{t("settings.formBio")}</Label>
-                        <Input
-                          id="prof-bio"
-                          value={profile.bio}
-                          onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
-                        />
-                      </div>
                     </div>
 
-                    <div className="pt-4 flex justify-end">
-                      <Button type="submit" disabled={isSavingProfile || isLoading} className="flex items-center gap-1.5">
+                    <div className="flex justify-end pt-4">
+                      <Button
+                        type="submit"
+                        disabled={isSavingProfile || isLoading}
+                        className="flex items-center gap-1.5"
+                      >
                         {isSavingProfile ? (
                           <IconLoader2 className="size-4 animate-spin" />
                         ) : (
@@ -606,78 +667,8 @@ export default function SettingsPage() {
               </Card>
             </TabsContent>
 
-            {/* SEO Tab Content */}
-            <TabsContent value="seo" className="mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t("settings.seoTitle")}</CardTitle>
-                  <CardDescription>
-                    {t("settings.seoDesc")}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleSaveSeo} className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="site-name">{t("settings.formSiteName")}</Label>
-                        <Input
-                          id="site-name"
-                          value={seo.siteName}
-                          onChange={(e) => setSeo({ ...seo, siteName: e.target.value })}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="def-title">{t("settings.formDefaultTitle")}</Label>
-                        <Input
-                          id="def-title"
-                          value={seo.defaultTitle}
-                          onChange={(e) => setSeo({ ...seo, defaultTitle: e.target.value })}
-                        />
-                      </div>
-
-                      <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="seo-desc">{t("settings.formMetaDesc")}</Label>
-                        <Input
-                          id="seo-desc"
-                          value={seo.description}
-                          onChange={(e) => setSeo({ ...seo, description: e.target.value })}
-                        />
-                      </div>
-
-                      <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="seo-keywords">{t("settings.formKeywords")}</Label>
-                        <Input
-                          id="seo-keywords"
-                          value={seo.keywords}
-                          onChange={(e) => setSeo({ ...seo, keywords: e.target.value })}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="ga-id">{t("settings.formAnalyticsId")}</Label>
-                        <Input
-                          id="ga-id"
-                          value={seo.analyticsId}
-                          onChange={(e) => setSeo({ ...seo, analyticsId: e.target.value })}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="pt-4 flex justify-end">
-                      <Button type="submit" className="flex items-center gap-1.5">
-                        <IconCheck className="size-4" />
-                        <span>{t("settings.saveSeo")}</span>
-                      </Button>
-                    </div>
-                  </form>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
             {/* Cache & API Diagnostics Tab Content */}
             <TabsContent value="cache" className="mt-4 space-y-6">
-              {/* On-demand Cache Invalidation */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -685,19 +676,20 @@ export default function SettingsPage() {
                     <span>On-Demand Edge Cache Invalidation (ISR)</span>
                   </CardTitle>
                   <CardDescription>
-                    Trigger immediate cache purging across the public website using Next.js on-demand ISR revalidation tags and paths.
+                    Trigger immediate cache purging across the public website using Next.js
+                    on-demand ISR revalidation tags and paths.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleTriggerRevalidation} className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
                         <Label htmlFor="reval-path">Target Path to Revalidate</Label>
                         <Input
                           id="reval-path"
                           value={revalidatePath}
                           onChange={(e) => setRevalidatePath(e.target.value)}
-                          placeholder="/ or /blog or /projects"
+                          placeholder="/ or /blog"
                         />
                       </div>
 
@@ -723,7 +715,7 @@ export default function SettingsPage() {
                       </div>
                     </div>
 
-                    <div className="pt-2 flex justify-end">
+                    <div className="flex justify-end pt-2">
                       <Button
                         type="submit"
                         disabled={isRevalidating}
@@ -741,7 +733,6 @@ export default function SettingsPage() {
                 </CardContent>
               </Card>
 
-              {/* Server Architecture & Health */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -753,23 +744,33 @@ export default function SettingsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="p-3 rounded-lg border bg-muted/20 flex flex-col gap-1">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div className="flex flex-col gap-1 rounded-lg border bg-muted/20 p-3">
                       <span className="text-xs text-muted-foreground">API Base URL</span>
-                      <span className="text-sm font-semibold truncate text-foreground font-mono">
+                      <span className="truncate font-mono text-sm font-semibold text-foreground">
                         {API_BASE_URL}
                       </span>
                     </div>
 
-                    <div className="p-3 rounded-lg border bg-muted/20 flex flex-col gap-1">
+                    <div className="flex flex-col gap-1 rounded-lg border bg-muted/20 p-3">
                       <span className="text-xs text-muted-foreground">MongoDB Atlas</span>
-                      <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                        <span className="size-2 rounded-full bg-emerald-500" />
-                        Connected (Atlas)
+                      <span
+                        className={`flex items-center gap-1.5 text-sm font-semibold ${
+                          dbConnected
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-destructive"
+                        }`}
+                      >
+                        <span
+                          className={`size-2 rounded-full ${
+                            dbConnected ? "bg-emerald-500" : "bg-destructive"
+                          }`}
+                        />
+                        {dbConnected ? "Connected (Atlas)" : "Disconnected"}
                       </span>
                     </div>
 
-                    <div className="p-3 rounded-lg border bg-muted/20 flex flex-col gap-1">
+                    <div className="flex flex-col gap-1 rounded-lg border bg-muted/20 p-3">
                       <span className="text-xs text-muted-foreground">Server Uptime</span>
                       <span className="text-sm font-semibold text-foreground">
                         {serverHealth.uptimeFormatted || "Operational"}
@@ -778,26 +779,29 @@ export default function SettingsPage() {
                   </div>
 
                   <div className="border-t pt-4">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                    <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
                       Registered API Modules
                     </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
+                    <div className="grid grid-cols-1 gap-2 font-mono text-xs sm:grid-cols-2">
                       {[
-                        { method: "GET/POST", path: "/api/v1/projects", desc: "Software Projects" },
-                        { method: "GET/POST", path: "/api/v1/case-studies", desc: "Architecture Case Studies" },
-                        { method: "GET/POST", path: "/api/v1/blogs", desc: "Blogs & Lexical Articles" },
-                        { method: "GET/POST", path: "/api/v1/books", desc: "Books & Main Shelf" },
-                        { method: "GET/POST", path: "/api/v1/designs", desc: "Graphic Design Showcase" },
-                        { method: "GET/POST", path: "/api/v1/upload", desc: "Vercel Blob Storage" },
-                        { method: "GET/PUT", path: "/api/v1/about", desc: "About & Philosophy Data" },
-                        { method: "GET", path: "/api/v1/messages", desc: "Visitor Inquiries Feed" },
+                        { path: "/api/v1/site", desc: "Web Localization & Config (EN/BN)" },
+                        { path: "/api/v1/about", desc: "About & Philosophy Data (EN/BN)" },
+                        { path: "/api/v1/projects", desc: "Software Projects" },
+                        { path: "/api/v1/case-studies", desc: "Architecture Case Studies" },
+                        { path: "/api/v1/blogs", desc: "Blogs & Lexical Articles" },
+                        { path: "/api/v1/books", desc: "Books & Main Shelf" },
+                        { path: "/api/v1/designs", desc: "Graphic Design Showcase" },
+                        { path: "/api/v1/upload", desc: "Vercel Blob Storage" },
+                        { path: "/api/v1/messages", desc: "Visitor Inquiries Feed" },
                       ].map((ep) => (
                         <div
                           key={ep.path}
-                          className="p-2 rounded border bg-muted/30 flex items-center justify-between"
+                          className="flex items-center justify-between rounded border bg-muted/30 p-2"
                         >
                           <span className="text-foreground">{ep.path}</span>
-                          <span className="text-[11px] text-muted-foreground font-sans">{ep.desc}</span>
+                          <span className="font-sans text-[11px] text-muted-foreground">
+                            {ep.desc}
+                          </span>
                         </div>
                       ))}
                     </div>

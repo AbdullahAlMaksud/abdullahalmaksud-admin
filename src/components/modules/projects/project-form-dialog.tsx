@@ -223,12 +223,16 @@ function ProjectFormInner({
           value={coverImage}
           onChange={setCoverImage}
           placeholder="/images/project/app.png"
+          module="project"
+          folderKey={slug || "draft"}
         />
         <ImageUpload
           label="Project Logo"
           value={logo}
           onChange={setLogo}
           placeholder="/images/project/logo/app.png"
+          module="project"
+          folderKey={slug || "draft"}
         />
       </div>
 

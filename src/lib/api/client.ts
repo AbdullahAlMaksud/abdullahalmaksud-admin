@@ -119,9 +119,11 @@ export const apiClient = {
   delete: <T>(path: string, options?: RequestInit) =>
     request<T>(path, { ...options, method: "DELETE" }),
 
-  upload: async (file: File): Promise<string> => {
+  upload: async (file: File, module = "general", folderKey = "misc"): Promise<string> => {
     const formData = new FormData();
     formData.append("file", file);
+    if (module) formData.append("module", module);
+    if (folderKey) formData.append("folderKey", folderKey);
 
     const res = await request<{ success: boolean; url: string }>("/api/v1/upload", {
       method: "POST",

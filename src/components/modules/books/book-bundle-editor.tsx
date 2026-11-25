@@ -255,6 +255,8 @@ export function BookBundleEditor() {
                   setFeaturedBook({ ...featuredBook, coverImage: url })
                 }
                 placeholder="/images/books/emon-jodi-hoto.webp"
+                module="book"
+                folderKey="featured"
               />
             </div>
 
